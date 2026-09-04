@@ -220,13 +220,15 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;back
   background-size:250% 100%;animation:asstTextShimmer 1.8s linear infinite;
 }
 @keyframes asstTextShimmer{from{background-position:200% 0}to{background-position:-200% 0}}
-.asst-tool-status{flex-shrink:0;display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase}
+/* Running/done aren't shown as a text badge any more — the shimmer on
+   the summary line already says "in progress", and a quiet finished
+   card already says "done" by no longer moving. A persistent "DONE"
+   label next to every single settled card was noise repeating what the
+   card's own stillness already communicated. Only failure still gets
+   an explicit, always-visible callout — that's the one state a glance
+   at stillness can't distinguish from success. */
+.asst-tool-status{flex-shrink:0;display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:#ff8080}
 .asst-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
-.asst-tool-status.running{color:var(--a)}
-.asst-tool-status.running .asst-dot{animation:asstPulseDot 1.2s ease-in-out infinite}
-@keyframes asstPulseDot{0%,100%{opacity:.35}50%{opacity:1}}
-.asst-tool-status.done{color:var(--t3)}
-.asst-tool-status.error{color:#ff8080}
 .asst-tool-chevron{width:13px;height:13px;flex-shrink:0;color:var(--t3);transition:transform .2s var(--ease-out)}
 .asst-tool-card.open .asst-tool-chevron{transform:rotate(180deg)}
 .asst-tool-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .22s var(--ease-out)}
@@ -5414,7 +5416,7 @@ var ASST_JUMP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 var ASST_TOOL_META = {
   geoint_analyze_photo: {
     icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
-    label: 'GEOINT · Analyze Photo', tab: 'geoint',
+    label: 'Analyzing photo', tab: 'geoint',
     summarize: function(r){
       if(r.error) return r.error;
       if(r.lat!=null) return 'GPS found: '+r.lat.toFixed(4)+', '+r.lon.toFixed(4)+(r.address?' — '+r.address:'');
@@ -5424,7 +5426,7 @@ var ASST_TOOL_META = {
   },
   wifi_status: {
     icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>',
-    label: 'WiFi Cracker · Status', tab: 'hc',
+    label: 'Checking WiFi Cracker', tab: 'hc',
     summarize: function(r){
       if(r.error) return r.error;
       var ok = [r.hashcat&&'hashcat', r.rockyou&&'rockyou', r.tshark&&'tshark'].filter(Boolean);
@@ -5434,7 +5436,7 @@ var ASST_TOOL_META = {
   },
   osint_search_username: {
     icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>',
-    label: 'Kiki OSINT · Username Search', tab: 'osint',
+    label: 'Searching username', tab: 'osint',
     summarize: function(r){
       if(r.error) return r.error;
       var hits = [];
@@ -5445,6 +5447,25 @@ var ASST_TOOL_META = {
       var total = hits.length + maigretN;
       if(!total) return 'No matches found.';
       return total + ' match' + (total===1?'':'es') + ' found' + (maigretN ? ' (' + maigretN + ' via Maigret)' : '') + (hits.length ? ' — ' + hits.join(', ') : '');
+    }
+  },
+  flipper_browse: {
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>',
+    label: 'Browsing SD card', tab: 'flipper',
+    summarize: function(r){
+      if(r.error) return r.error;
+      var files = r.files || [];
+      var dirs = files.filter(function(f){ return f.is_dir; }).length;
+      var count = files.length - dirs;
+      return (r.path || '/ext') + ' — ' + count + ' file' + (count===1?'':'s') + (dirs ? ', ' + dirs + ' folder' + (dirs===1?'':'s') : '');
+    }
+  },
+  flipper_read_capture: {
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>',
+    label: 'Reading capture file', tab: 'flipper',
+    summarize: function(r){
+      if(r.error) return r.error;
+      return (r.path || '') + ' — ' + (r.format || 'file') + ', ' + (r.size!=null ? r.size+' bytes' : '');
     }
   }
 };
@@ -5630,8 +5651,6 @@ function asstRenderToolCard(msgIdx, toolIdx, t, status){
     try{ summary = meta.summarize(t.result || {}); }catch(e){ summary = 'done'; }
   }
   var isErr = status === 'error' || (t.result && t.result.error);
-  var statusCls = isErr ? 'error' : status;
-  var statusLabel = isErr ? 'Failed' : (status === 'running' ? 'Running' : 'Done');
   return '<div class="asst-tool-card'+(open?' open':'')+'" onclick="asstToggleTool(\''+key+'\')">'
     + '<div class="asst-tool-card-inner">'
     +   '<div class="asst-tool-icon">'+meta.icon+'</div>'
@@ -5639,7 +5658,7 @@ function asstRenderToolCard(msgIdx, toolIdx, t, status){
     +     '<div class="asst-tool-label">'+asstEscape(meta.label)+'</div>'
     +     '<div class="asst-tool-summary'+(status==='running'?' shimmer':'')+'">'+asstEscape(summary)+'</div>'
     +   '</div>'
-    +   '<div class="asst-tool-status '+statusCls+'"><span class="asst-dot"></span>'+statusLabel+'</div>'
+    +   (isErr ? '<div class="asst-tool-status error"><span class="asst-dot"></span>Failed</div>' : '')
     +   '<svg class="asst-tool-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'
     + '</div>'
     + '<div class="asst-tool-body"><div class="asst-tool-body-inner">'
