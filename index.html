@@ -1432,17 +1432,17 @@ input[type=range].ur-range:active::-moz-range-thumb{width:9px}
 .wc-prog-wl::before{inset:-5px -12px}
 .wc-prog-pct::before{inset:-4px -10px}
 .wc-prog-wl{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--t3)}
-/* .wc-prog-bar (position context for the blur backdrop, allowed to extend
-   past its own bounds) wraps .wc-prog-track (the actual overflow:hidden clip
-   for the fill) — the blur pseudo can't live directly on the clipping
-   element itself, its whole point is to spill a few px past it. */
+/* Real M3 Expressive wavy determinate bar — same attachWaveBar() component
+   the rest of the app uses (Downloader/GEOINT/Unredact loading states,
+   Settings' Loading Indicator preview), not a plain linear-gradient div.
+   Those 5 only ever run indeterminate (no real backend percentage to
+   report); this is the first spot with a genuine one to drive it with. */
 .wc-prog-bar{position:relative;width:70%;max-width:280px}
 .wc-prog-bar::before{
   content:'';position:absolute;z-index:-1;pointer-events:none;inset:-6px -8px;border-radius:100px;
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
 }
-.wc-prog-track{height:6px;border-radius:100px;background:rgba(255,255,255,.08);overflow:hidden}
-.wc-prog-fill{height:100%;width:0%;background:linear-gradient(90deg,#5cd6ff,#34e6a0);border-radius:100px;transition:width .4s var(--ease-out)}
+.wc-prog-wave{width:100%;height:16px;display:block}
 .wc-prog-pct{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--t1)}
 .wc-term{display:flex;flex-direction:column;min-height:0;position:relative;overflow:hidden;background:var(--g-bg);border:1px solid var(--g-bd);border-radius:var(--r)}
 .wc-term-hdr{height:44px;display:flex;align-items:center;padding:0 18px;gap:10px;flex-shrink:0;border-bottom:1px solid var(--g-bd)}
@@ -2834,7 +2834,7 @@ document.addEventListener("pointermove",(e)=>{
         <div class="wc-term-body" id="wc-tb"></div>
         <div class="wc-prog-overlay" id="wc-prog-overlay">
           <div class="wc-prog-wl" id="wc-prog-wl">starting…</div>
-          <div class="wc-prog-bar"><div class="wc-prog-track"><div class="wc-prog-fill" id="wc-prog-fill"></div></div></div>
+          <div class="wc-prog-bar"><svg class="wc-prog-wave" id="wc-prog-wave" viewBox="0 0 200 16"></svg></div>
           <div class="wc-prog-pct" id="wc-prog-pct">0%</div>
         </div>
         <div class="wc-pw-overlay" id="wc-pw-overlay" onclick="this.classList.remove('show')">
@@ -2859,7 +2859,7 @@ document.addEventListener("pointermove",(e)=>{
 // plus wcChk (called from sw() when the WiFi Cracker tab opens, see the
 // panel switcher) are exposed on window; everything else stays private.
 (function(){
-  var P='', H2='', LI=0, poll=null, pwShown=false;
+  var P='', H2='', LI=0, poll=null, pwShown=false, progPct=0, waveAttached=false;
   var liteEl = document.getElementById('wc-lite');
   liteEl.checked = localStorage.getItem('kiki_wc_lite') === '1';
   function wcOnLite(on){ localStorage.setItem('kiki_wc_lite', on ? '1' : '0'); }
@@ -2943,7 +2943,7 @@ document.addEventListener("pointermove",(e)=>{
     var mPct = msg.match(/Progress\.+:\s*[\d,]+\/[\d,]+\s*\(([\d.]+)%\)/);
     if(mPct){
       var pct = parseFloat(mPct[1]);
-      document.getElementById('wc-prog-fill').style.width = pct + '%';
+      progPct = pct; // read live by attachWaveBar's own rAF loop, no DOM write needed here
       document.getElementById('wc-prog-pct').textContent = pct.toFixed(1) + '%';
     }
     var i = 0, txt = esc(msg);
@@ -3063,7 +3063,7 @@ document.addEventListener("pointermove",(e)=>{
     resBox.classList.remove('show', 'notfound');
     document.getElementById('wc-r-l').textContent = 'password found';
     var vp = document.getElementById('wc-v-p'); if(vp){ vp.textContent='—'; vp.className='wc-rv'; }
-    document.getElementById('wc-prog-fill').style.width = '0%';
+    progPct = 0;
     document.getElementById('wc-prog-pct').textContent = '0%';
     document.getElementById('wc-prog-wl').textContent = 'starting…';
     document.getElementById('wc-prog-overlay').classList.add('show');
@@ -3090,6 +3090,17 @@ document.addEventListener("pointermove",(e)=>{
     document.getElementById('wc-btc').style.display = '';
   }
   async function wcChk(){
+    // Deferred to here (rather than at IIFE-parse time) because
+    // attachWaveBar is declared in a later <script> block further down the
+    // document — this script tag runs before that one exists, so calling it
+    // immediately would hit `undefined`. wcChk() only ever runs once the
+    // whole document (and every later <script>) has already parsed (it's
+    // triggered by sw() opening the tab, or the initial page-load init IIFE
+    // further down that also runs after everything's defined).
+    if(!waveAttached && window.attachWaveBar){
+      waveAttached = true;
+      window.attachWaveBar('wc-prog-wave', {progress: function(){ return progPct / 100; }});
+    }
     try{
       var r = await fetch('/api/hc/status'), d = await r.json();
       [['hashcat','wc-p-hc'],['rockyou','wc-p-ry'],['hcxtool','wc-p-hx'],['tshark','wc-p-ts']].forEach(function(kv){
