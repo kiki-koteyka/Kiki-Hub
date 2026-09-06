@@ -1437,12 +1437,12 @@ input[type=range].ur-range:active::-moz-range-thumb{width:9px}
    Settings' Loading Indicator preview), not a plain linear-gradient div.
    Those 5 only ever run indeterminate (no real backend percentage to
    report); this is the first spot with a genuine one to drive it with. */
-.wc-prog-bar{position:relative;width:70%;max-width:280px}
+.wc-prog-bar{position:relative;width:85%;max-width:400px}
 .wc-prog-bar::before{
-  content:'';position:absolute;z-index:-1;pointer-events:none;inset:-6px -8px;border-radius:100px;
-  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  content:'';position:absolute;z-index:-1;pointer-events:none;inset:-3px -4px;border-radius:100px;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
 }
-.wc-prog-wave{width:100%;height:16px;display:block}
+.wc-prog-wave{width:100%;height:26px;display:block}
 .wc-prog-pct{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--t1)}
 .wc-term{display:flex;flex-direction:column;min-height:0;position:relative;overflow:hidden;background:var(--g-bg);border:1px solid var(--g-bd);border-radius:var(--r)}
 .wc-term-hdr{height:44px;display:flex;align-items:center;padding:0 18px;gap:10px;flex-shrink:0;border-bottom:1px solid var(--g-bd)}
@@ -2834,7 +2834,7 @@ document.addEventListener("pointermove",(e)=>{
         <div class="wc-term-body" id="wc-tb"></div>
         <div class="wc-prog-overlay" id="wc-prog-overlay">
           <div class="wc-prog-wl" id="wc-prog-wl">starting…</div>
-          <div class="wc-prog-bar"><svg class="wc-prog-wave" id="wc-prog-wave" viewBox="0 0 200 16"></svg></div>
+          <div class="wc-prog-bar"><svg class="wc-prog-wave" id="wc-prog-wave" viewBox="0 0 200 26"></svg></div>
           <div class="wc-prog-pct" id="wc-prog-pct">0%</div>
         </div>
         <div class="wc-pw-overlay" id="wc-pw-overlay" onclick="this.classList.remove('show')">
@@ -3099,7 +3099,7 @@ document.addEventListener("pointermove",(e)=>{
     // further down that also runs after everything's defined).
     if(!waveAttached && window.attachWaveBar){
       waveAttached = true;
-      window.attachWaveBar('wc-prog-wave', {progress: function(){ return progPct / 100; }});
+      window.attachWaveBar('wc-prog-wave', {progress: function(){ return progPct / 100; }, amp: 5, strokeWidth: 3});
     }
     try{
       var r = await fetch('/api/hc/status'), d = await r.json();
