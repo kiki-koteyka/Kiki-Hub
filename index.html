@@ -1416,8 +1416,32 @@ input[type=range].ur-range:active::-moz-range-thumb{width:9px}
    success one — this is status, not a one-off celebration. */
 .wc-prog-overlay{position:absolute;inset:0;z-index:40;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(4,17,26,.18);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;transition:opacity .3s var(--ease-out)}
 .wc-prog-overlay.show{display:flex;opacity:1}
+/* Each status element gets its own invisible backdrop — a same-shaped zone
+   a bit larger than the element itself, stacking a second (stronger)
+   backdrop-filter on top of the overlay's own weak global blur(6px). No
+   fill/border of its own — it's not a visible card, just a locally denser
+   patch of the same glass so text over busy scrolling log lines stays
+   legible without a flat panel behind it. z-index:-1 keeps it under the
+   element's own text/fill (position:relative on the element establishes
+   the local stacking context the pseudo sits within). */
+.wc-prog-wl,.wc-prog-pct{position:relative}
+.wc-prog-wl::before,.wc-prog-pct::before{
+  content:'';position:absolute;z-index:-1;pointer-events:none;border-radius:8px;
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+}
+.wc-prog-wl::before{inset:-5px -12px}
+.wc-prog-pct::before{inset:-4px -10px}
 .wc-prog-wl{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--t3)}
-.wc-prog-bar{width:70%;max-width:280px;height:6px;border-radius:100px;background:rgba(255,255,255,.08);overflow:hidden}
+/* .wc-prog-bar (position context for the blur backdrop, allowed to extend
+   past its own bounds) wraps .wc-prog-track (the actual overflow:hidden clip
+   for the fill) — the blur pseudo can't live directly on the clipping
+   element itself, its whole point is to spill a few px past it. */
+.wc-prog-bar{position:relative;width:70%;max-width:280px}
+.wc-prog-bar::before{
+  content:'';position:absolute;z-index:-1;pointer-events:none;inset:-6px -8px;border-radius:100px;
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+}
+.wc-prog-track{height:6px;border-radius:100px;background:rgba(255,255,255,.08);overflow:hidden}
 .wc-prog-fill{height:100%;width:0%;background:linear-gradient(90deg,#5cd6ff,#34e6a0);border-radius:100px;transition:width .4s var(--ease-out)}
 .wc-prog-pct{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--t1)}
 .wc-term{display:flex;flex-direction:column;min-height:0;position:relative;overflow:hidden;background:var(--g-bg);border:1px solid var(--g-bd);border-radius:var(--r)}
@@ -2810,7 +2834,7 @@ document.addEventListener("pointermove",(e)=>{
         <div class="wc-term-body" id="wc-tb"></div>
         <div class="wc-prog-overlay" id="wc-prog-overlay">
           <div class="wc-prog-wl" id="wc-prog-wl">starting…</div>
-          <div class="wc-prog-bar"><div class="wc-prog-fill" id="wc-prog-fill"></div></div>
+          <div class="wc-prog-bar"><div class="wc-prog-track"><div class="wc-prog-fill" id="wc-prog-fill"></div></div></div>
           <div class="wc-prog-pct" id="wc-prog-pct">0%</div>
         </div>
         <div class="wc-pw-overlay" id="wc-pw-overlay" onclick="this.classList.remove('show')">
