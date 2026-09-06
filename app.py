@@ -1518,29 +1518,6 @@ def hc_wsl_status():
 # over auto-detection on every future check.
 _TOOL_PATH_FIELDS = {"hashcat": "HASHCAT_EXE_PATH", "wordlist": "WORDLIST_PATH", "tshark": "TSHARK_PATH"}
 
-@app.route("/api/hc/pick")
-def hc_pick():
-    # The WiFi Cracker panel's "click to browse" (see index.html's wcPick())
-    # used to write a temp tkinter script and run it via
-    # `subprocess.run(["python", tmp])` — works only if a standalone Python
-    # happens to be on PATH, which a machine set up to run the frozen exe
-    # specifically won't have. The desktop window's own pywebview instance
-    # already has a real native file dialog living in this same process
-    # (see desktop.py's Api.pick_file, used by the Settings panel); calling
-    # it directly here needs no scripting runtime and no temp files.
-    try:
-        import webview
-        window = webview.windows[0]
-        result = window.create_file_dialog(
-            webview.FileDialog.OPEN,
-            file_types=("Capture files (*.pcap;*.pcapng;*.cap)", "All files (*.*)"))
-        path = (result[0] if isinstance(result, (list, tuple)) else result) if result else ""
-    except Exception:
-        # Not running under the desktop window (e.g. the dev-server-in-a-
-        # browser path) — no native dialog host to marshal the call to.
-        path = ""
-    return jsonify({"path": path})
-
 @app.route("/api/hc/tool_paths", methods=["POST"])
 def hc_set_tool_path():
     data = request.json or {}
