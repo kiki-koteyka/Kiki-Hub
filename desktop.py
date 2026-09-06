@@ -105,6 +105,21 @@ class Api:
         path = result[0] if isinstance(result, (list, tuple)) else result
         return {"ok": True, "path": path}
 
+    def app_ready(self):
+        # Called by index.html's own bootstrap, after a double
+        # requestAnimationFrame — i.e. once the page has actually painted a
+        # frame, not merely finished parsing. WebView2's 'loaded' event (what
+        # _on_loaded below otherwise depends on) fires at DOM-ready, well
+        # before a heavy single-file SPA like this one has JIT-compiled its
+        # ~12k lines of JS and painted the aurora canvas background — on a
+        # cold WebView2 engine start that gap showed up as the native window
+        # (revealed on the DOM signal, background_color is near-black)
+        # sitting there solid black for several seconds before content
+        # appeared. This is the real readiness signal _on_loaded/
+        # _reveal_watchdog wait on now.
+        _app_painted.set()
+        return {"ok": True}
+
 
 def _run_flask():
     # Imported here (not at module scope) so the slow module-level work in
@@ -329,6 +344,7 @@ def _donut_frame(a, b):
 _flask_ready = threading.Event()
 _donut_done  = threading.Event()
 _nav_started = threading.Event()
+_app_painted = threading.Event()  # set by Api.app_ready() once the page has actually painted a frame
 _revealed    = threading.Event()
 _quit_requested = threading.Event()
 _tray_icon = None
@@ -469,8 +485,15 @@ def _on_loaded(window):
     if not _nav_started.is_set():
         # The blank warm-up page just finished loading — ignore it.
         return
-    # Wait for the donut to finish its minimum display time, then reveal.
+    # Wait for the donut to finish its minimum display time, then for the
+    # page to actually confirm it painted (see Api.app_ready) — 'loaded'
+    # alone fires at DOM-ready, before a cold WebView2 engine has finished
+    # JIT-compiling/painting this much JS, which is what a solid-black
+    # revealed window turned out to be. Timeout is a fallback in case the
+    # signal never arrives (e.g. a JS error before reaching it) so the
+    # window doesn't stay hidden forever.
     _donut_done.wait(timeout=30)
+    _app_painted.wait(timeout=10)
     _reveal(window)
 
 
@@ -483,6 +506,7 @@ def _reveal_watchdog(window):
     # there on its own.
     _nav_started.wait(timeout=55)
     _donut_done.wait(timeout=35)
+    _app_painted.wait(timeout=10)
     if _revealed.wait(timeout=5):
         return
     _reveal(window)

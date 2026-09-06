@@ -7185,5 +7185,23 @@ function restartOnboarding(){
   _onboardMaybeStart();
 }
 _onboardMaybeStart();
+// Tells desktop.py the page has actually PAINTED, not just parsed — the
+// native window stays hidden(=True) until this fires (see desktop.py's
+// Api.app_ready / _on_loaded). WebView2's own 'loaded' event corresponds to
+// DOM-ready, not first paint; on a cold engine start (fresh WebView2
+// process, ~12k lines of JS to parse/JIT, the aurora canvas background to
+// spin up) painting can lag several seconds behind DOM-ready, which is what
+// showed up as "app window is solid black for ~10s" — the window was
+// revealed on the DOM signal while the compositor was still catching up.
+// Double rAF guarantees at least one real frame has actually painted before
+// signaling. Guarded because window.pywebview only exists inside the
+// desktop app, never in the plain dev-server-in-a-browser path.
+requestAnimationFrame(function(){
+  requestAnimationFrame(function(){
+    if(window.pywebview && window.pywebview.api && window.pywebview.api.app_ready){
+      window.pywebview.api.app_ready();
+    }
+  });
+});
 </script>
 </html>
