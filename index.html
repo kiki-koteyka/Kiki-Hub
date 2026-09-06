@@ -1367,6 +1367,14 @@ input[type=range].ur-range:active::-moz-range-thumb{width:9px}
 .wc-ph{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(255,255,255,.48);margin-top:4px}
 .wc-ph.ok{color:var(--a)}
 .wc-ph.er{color:var(--wc-red)}
+.wc-lite{display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:rgba(255,255,255,.6);cursor:pointer;margin-bottom:10px;user-select:none}
+/* #wc-lite (id), not .wc-lite input (class+type) — a later global reset rule
+   (input:not([type="range"]), select{width:100%}) ties that class+type
+   selector on specificity and wins on source order, stretching the checkbox
+   to the label's full width and forcing its sibling text to wrap into a
+   near-zero-width column, one letter per line. */
+#wc-lite{width:13px;height:13px;accent-color:var(--a);cursor:pointer;flex-shrink:0}
+.wc-lite:hover{color:rgba(255,255,255,.85)}
 .wc-btn{width:100%;padding:11px 12px;border-radius:var(--r2);border:1px solid var(--g-bd2);font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:600;letter-spacing:.02em;cursor:pointer;background:var(--g-bg);color:var(--t2);position:relative;overflow:hidden;transition:color .15s,border-color .15s,background .15s,transform .15s}
 .wc-btn:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)}
 .wc-btn:active{transform:scale(.97);transition:transform 100ms var(--ease-out)}
@@ -1380,6 +1388,12 @@ input[type=range].ur-range:active::-moz-range-thumb{width:9px}
 .wc-res.show{display:block;animation:fadeUp .35s var(--wc-ease-spring)}
 .wc-r-l{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.22em;color:var(--a);margin-bottom:5px;text-transform:uppercase}
 .wc-r-v{font-size:20px;font-weight:800;color:var(--a);word-break:break-all;font-family:'JetBrains Mono',monospace}
+/* Distinct from a found password — same box position so the result is
+   never "silently nothing", but neutral tone since running out of
+   wordlists isn't an error, just an outcome. */
+.wc-res.notfound{border-color:var(--g-bd2);background:rgba(255,255,255,.03)}
+.wc-res.notfound .wc-r-l{color:var(--t3)}
+.wc-res.notfound .wc-r-v{color:var(--t2);font-size:13px;font-weight:600}
 .wc-pw-overlay{position:absolute;inset:0;z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:rgba(4,17,26,.18);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;transition:opacity .4s var(--ease-out);cursor:pointer}
 .wc-pw-overlay.show{display:flex;opacity:1}
 .wc-pw-check{width:140px;height:140px;opacity:0}
@@ -1395,6 +1409,17 @@ input[type=range].ur-range:active::-moz-range-thumb{width:9px}
 .wc-pw-text{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:#34e6a0;text-align:center;letter-spacing:.02em;word-break:break-all;max-width:80%;opacity:0;transform:translateY(8px);filter:blur(4px)}
 .wc-pw-overlay.show .wc-pw-text{animation:wcPwTextIn .5s var(--ease-out) .85s forwards}
 @keyframes wcPwTextIn{to{opacity:1;transform:translateY(0);filter:blur(0)}}
+/* Live crack progress — same blurred-glass treatment as the success
+   checkmark overlay (.wc-pw-overlay) so mid-crack and "found it" read as
+   one consistent moment instead of a plain terminal dump switching to a
+   decorated popup out of nowhere. Not clickable-to-dismiss like the
+   success one — this is status, not a one-off celebration. */
+.wc-prog-overlay{position:absolute;inset:0;z-index:40;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(4,17,26,.18);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;transition:opacity .3s var(--ease-out)}
+.wc-prog-overlay.show{display:flex;opacity:1}
+.wc-prog-wl{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--t3)}
+.wc-prog-bar{width:70%;max-width:280px;height:6px;border-radius:100px;background:rgba(255,255,255,.08);overflow:hidden}
+.wc-prog-fill{height:100%;width:0%;background:linear-gradient(90deg,#5cd6ff,#34e6a0);border-radius:100px;transition:width .4s var(--ease-out)}
+.wc-prog-pct{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--t1)}
 .wc-term{display:flex;flex-direction:column;min-height:0;position:relative;overflow:hidden;background:var(--g-bg);border:1px solid var(--g-bd);border-radius:var(--r)}
 .wc-term-hdr{height:44px;display:flex;align-items:center;padding:0 18px;gap:10px;flex-shrink:0;border-bottom:1px solid var(--g-bd)}
 .wc-term-title{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;color:rgba(255,255,255,.42);flex:1;text-transform:uppercase}
@@ -2763,11 +2788,15 @@ document.addEventListener("pointermove",(e)=>{
         <div class="wc-sec">
           <div class="wc-sec-h">actions</div>
           <div class="wc-sec-b">
+            <label class="wc-lite" for="wc-lite" title="Caps hashcat's workload profile at Low (-w 1) instead of the default — slower cracking, but leaves the GPU/CPU usable for everything else instead of pegging them at 100%.">
+              <input type="checkbox" id="wc-lite" onchange="wcOnLite(this.checked)">
+              <span>Lite mode — lower GPU/CPU load, slower crack</span>
+            </label>
             <button class="wc-btn" id="wc-bta" onclick="wcDoA()"><span>analyze pcap</span></button>
             <button class="wc-btn go" id="wc-btc" onclick="wcDoC()" disabled><span>run hashcat</span></button>
             <button class="wc-btn stop" id="wc-bts" onclick="wcDoS()" style="display:none"><span>terminate</span></button>
             <div class="wc-res" id="wc-res">
-              <div class="wc-r-l">password found</div>
+              <div class="wc-r-l" id="wc-r-l">password found</div>
               <div class="wc-r-v" id="wc-rv"></div>
             </div>
           </div>
@@ -2779,6 +2808,11 @@ document.addEventListener("pointermove",(e)=>{
           <span class="wc-term-clr" onclick="wcClr()">clear</span>
         </div>
         <div class="wc-term-body" id="wc-tb"></div>
+        <div class="wc-prog-overlay" id="wc-prog-overlay">
+          <div class="wc-prog-wl" id="wc-prog-wl">starting…</div>
+          <div class="wc-prog-bar"><div class="wc-prog-fill" id="wc-prog-fill"></div></div>
+          <div class="wc-prog-pct" id="wc-prog-pct">0%</div>
+        </div>
         <div class="wc-pw-overlay" id="wc-pw-overlay" onclick="this.classList.remove('show')">
           <svg class="wc-pw-check" viewBox="0 0 100 100">
             <circle class="wc-pw-circle" cx="50" cy="50" r="46"/>
@@ -2797,11 +2831,14 @@ document.addEventListener("pointermove",(e)=>{
 // (P, H2, LI, poll, st, sv, pick, clr…) that were fine in their own
 // standalone document but would collide with half this file's own globals
 // once inlined here. Only the 6 functions HTML onclick/oninput attributes
-// above actually call (wcPick, wcOnP, wcDoA, wcDoC, wcDoS, wcClr) plus
-// wcChk (called from sw() when the WiFi Cracker tab opens, see the panel
-// switcher) are exposed on window; everything else stays private.
+// above actually call (wcPick, wcOnP, wcDoA, wcDoC, wcDoS, wcClr, wcOnLite)
+// plus wcChk (called from sw() when the WiFi Cracker tab opens, see the
+// panel switcher) are exposed on window; everything else stays private.
 (function(){
   var P='', H2='', LI=0, poll=null, pwShown=false;
+  var liteEl = document.getElementById('wc-lite');
+  liteEl.checked = localStorage.getItem('kiki_wc_lite') === '1';
+  function wcOnLite(on){ localStorage.setItem('kiki_wc_lite', on ? '1' : '0'); }
 
   function showPwFound(pw){
     if(pwShown) return; pwShown = true;
@@ -2853,6 +2890,7 @@ document.addEventListener("pointermove",(e)=>{
     H2 = '';
     pwShown = false;
     document.getElementById('wc-pw-overlay').classList.remove('show');
+    document.getElementById('wc-prog-overlay').classList.remove('show');
   }
   function lg(tag, msg){
     var tb = document.getElementById('wc-tb'), now = new Date().toTimeString().slice(0,8);
@@ -2860,6 +2898,17 @@ document.addEventListener("pointermove",(e)=>{
     var ts = document.createElement('span'); ts.className = 'wc-ts'; ts.textContent = now;
     var tm = document.createElement('span'); tm.className = 'wc-tm';
     row.appendChild(ts); row.appendChild(tm); tb.appendChild(row); tb.scrollTop = tb.scrollHeight;
+    // Progress overlay updates instantly off the raw line, not gated behind
+    // the letter-by-letter typewriter reveal below — a live percentage that
+    // lags a full tick animation behind reads as broken, not stylish.
+    var mWl = msg.match(/^trying:\s*(.+)/);
+    if(mWl) document.getElementById('wc-prog-wl').textContent = mWl[1];
+    var mPct = msg.match(/Progress\.+:\s*[\d,]+\/[\d,]+\s*\(([\d.]+)%\)/);
+    if(mPct){
+      var pct = parseFloat(mPct[1]);
+      document.getElementById('wc-prog-fill').style.width = pct + '%';
+      document.getElementById('wc-prog-pct').textContent = pct.toFixed(1) + '%';
+    }
     var i = 0, txt = esc(msg);
     function tick(){
       if(i < txt.length){
@@ -2907,10 +2956,23 @@ document.addEventListener("pointermove",(e)=>{
         document.getElementById('wc-res').classList.add('show');
         var vp = document.getElementById('wc-v-p');
         if(vp){ vp.textContent = pw; vp.className = 'wc-rv ok'; }
+        document.getElementById('wc-prog-overlay').classList.remove('show');
         showPwFound(pw);
       }
       if(!rd.running && poll){
-        clearInterval(poll); poll = null; st('idle', '');
+        clearInterval(poll); poll = null;
+        document.getElementById('wc-prog-overlay').classList.remove('show');
+        // Without this, "ran and found nothing" and "haven't cracked yet"
+        // looked identical — both just idle with both buttons available —
+        // which read as the UI silently asking to analyze all over again.
+        if(rd.outcome === 'exhausted'){
+          document.getElementById('wc-r-l').textContent = 'result';
+          document.getElementById('wc-rv').textContent = 'No password found — every wordlist exhausted.';
+          document.getElementById('wc-res').classList.add('show', 'notfound');
+          st('not found', 'err');
+        } else {
+          st('idle', '');
+        }
         document.getElementById('wc-btc').disabled = false;
         document.getElementById('wc-btc').style.display = '';
         document.getElementById('wc-bts').style.display = 'none';
@@ -2960,23 +3022,31 @@ document.addEventListener("pointermove",(e)=>{
     document.getElementById('wc-btc').disabled = true;
     document.getElementById('wc-btc').style.display = 'none';
     document.getElementById('wc-bts').style.display = '';
-    document.getElementById('wc-res').classList.remove('show');
+    var resBox = document.getElementById('wc-res');
+    resBox.classList.remove('show', 'notfound');
+    document.getElementById('wc-r-l').textContent = 'password found';
     var vp = document.getElementById('wc-v-p'); if(vp){ vp.textContent='—'; vp.className='wc-rv'; }
+    document.getElementById('wc-prog-fill').style.width = '0%';
+    document.getElementById('wc-prog-pct').textContent = '0%';
+    document.getElementById('wc-prog-wl').textContent = 'starting…';
+    document.getElementById('wc-prog-overlay').classList.add('show');
     try{
-      var r = await fetch('/api/hc/crack', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({hash_file:H2})});
+      var r = await fetch('/api/hc/crack', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({hash_file:H2, lite:liteEl.checked})});
       var d = await r.json();
       if(!d.ok){
         lg('err', d.error||'failed'); st('error','err');
         document.getElementById('wc-btc').disabled = false;
         document.getElementById('wc-btc').style.display = '';
+        document.getElementById('wc-prog-overlay').classList.remove('show');
         return;
       }
       poll = setInterval(pf2, 800);
-    }catch(e){ lg('err', e.message); st('error','err'); }
+    }catch(e){ lg('err', e.message); st('error','err'); document.getElementById('wc-prog-overlay').classList.remove('show'); }
   }
   async function wcDoS(){
     await fetch('/api/hc/stop', {method:'POST'});
     if(poll){ clearInterval(poll); poll = null; }
+    document.getElementById('wc-prog-overlay').classList.remove('show');
     st('stopped', '');
     document.getElementById('wc-bts').style.display = 'none';
     document.getElementById('wc-btc').disabled = false;
@@ -2994,6 +3064,7 @@ document.addEventListener("pointermove",(e)=>{
   }
   window.wcPick = wcPick; window.wcOnP = wcOnP; window.wcDoA = wcDoA;
   window.wcDoC = wcDoC; window.wcDoS = wcDoS; window.wcClr = wcClr; window.wcChk = wcChk;
+  window.wcOnLite = wcOnLite;
   wcChk();
   setTimeout(function(){
     lg('sys','wificrack ready');

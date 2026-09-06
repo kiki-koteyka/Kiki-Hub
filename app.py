@@ -224,6 +224,13 @@ _log  = []
 _password = None
 _running  = False   # True while crack thread is alive
 _stop_requested = False  # set by /api/hc/stop to break the wordlist loop
+# Distinguishes "never run yet" (None) from "ran and found nothing" (exhausted)
+# from "ran and found it" (found) from "user hit terminate" (stopped) — without
+# this, the frontend's only signal after a crack finishes was !running, which
+# looks identical whether nothing has happened yet or every wordlist just got
+# chewed through with no hit. That's why it read as "prompting to analyze
+# again": the UI silently went back to the exact same idle state either way.
+_last_outcome = None
 
 def ts():   return datetime.now().strftime("%H:%M:%S")
 def log(tag, msg):
@@ -1643,9 +1650,10 @@ def hc_analyze():
 
 @app.route("/api/hc/crack", methods=["POST"])
 def hc_crack():
-    global _proc
+    global _proc, _last_outcome
     data=request.json or {}
     hf=data.get("hash_file","").strip()
+    lite=bool(data.get("lite"))
     if not hf or not os.path.exists(hf): return jsonify({"ok":False,"error":"hash file not found"})
     hashcat_exe, _ = resolve_hashcat()
     if not hashcat_exe:
@@ -1660,10 +1668,13 @@ def hc_crack():
     if not all_wl: return jsonify({"ok":False,"error":"no wordlists"})
     cracked=hf.replace(".hc22000","_cracked.txt")
     log("sys","hashcat start"); log("dim",f"wordlists: {len(all_wl)}")
+    if lite: log("dim","lite mode: workload profile 1 (Low)")
     def run():
-        global _proc, _password, _running, _stop_requested
+        global _proc, _password, _running, _stop_requested, _last_outcome
         _running = True
         _stop_requested = False
+        _last_outcome = None
+        _password = None  # stale password from a previous pcap must not bleed into this run's result
         try:
             # Check potfile first — log found passwords but DON'T stop
             found_in_pot = []
@@ -1690,6 +1701,7 @@ def hc_crack():
                     break
                 log("sys",f"trying: {Path(wl).name}")
                 cmd=[hashcat_exe,"-m","22000",hf,wl,"--status","--status-timer=4","--force","-o",cracked]
+                if lite: cmd += ["-w","1"]  # workload profile 1 (Low) — hashcat's own throttle, keeps the rest of the machine usable instead of pegging every compute unit at 100%
                 try:
                     _proc=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1,cwd=hc_dir)
                     for line in _proc.stdout:
@@ -1723,7 +1735,13 @@ def hc_crack():
                                 found=True
                 except: pass
                 if not found: log("warn",f"not found in {Path(wl).name}")
-            if not found_in_pot: log("warn","exhausted all wordlists")
+            if _stop_requested:
+                _last_outcome = "stopped"
+            elif found_in_pot:
+                _last_outcome = "found"
+            else:
+                _last_outcome = "exhausted"
+                log("warn","exhausted all wordlists")
             log("sys","hashcat done")
         finally:
             _running = False
@@ -1745,7 +1763,7 @@ def hc_log():
 @app.route("/api/hc/running")
 def hc_running():
     running = _running or bool(_proc and _proc.poll() is None)
-    return jsonify({"running": running, "password": _password})
+    return jsonify({"running": running, "password": _password, "outcome": None if running else _last_outcome})
 
 # ════ FLIPPER ZERO ══════════════════════════════════════════
 
