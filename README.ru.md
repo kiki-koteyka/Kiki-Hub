@@ -53,7 +53,7 @@
 
 Для тех, кто уже знает что делает — короткий чек-лист (подробности в [Установке](#установка)):
 
-1. `git clone https://github.com/kikikoteyka-dev/Kiki-Osint.git -b kiki-hub` (куда угодно)
+1. `git clone https://github.com/kiki-koteyka/Kiki-Hub.git -b kiki-hub` (куда угодно)
 2. `pip install Flask flask-cors requests httpx beautifulsoup4 python-dotenv phonenumbers dnspython maigret holehe pyserial yt-dlp Pillow`
 3. Hashcat → `C:\HashCat\hashcat-7.1.2\` + WSL с `hcxtools` (для конвертации pcap)
 4. Скопировать `wifi_cracker/wifi_cracker.py` из репо в `C:\HashCat\hashcat-7.1.2\wifi_cracker.py`
@@ -85,7 +85,7 @@ osint-portrait\
 ### 1. Клонировать репо
 
 ```bash
-git clone https://github.com/kikikoteyka-dev/Kiki-Osint.git -b kiki-hub C:\Users\<you>\osint-portrait
+git clone https://github.com/kiki-koteyka/Kiki-Hub.git -b kiki-hub C:\Users\<you>\osint-portrait
 cd C:\Users\<you>\osint-portrait
 ```
 

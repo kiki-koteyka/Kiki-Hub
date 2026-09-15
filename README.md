@@ -53,7 +53,7 @@
 
 For people who already know what they're doing — short checklist (details in [Installation](#installation)):
 
-1. `git clone https://github.com/kikikoteyka-dev/Kiki-Osint.git -b kiki-hub` (anywhere)
+1. `git clone https://github.com/kiki-koteyka/Kiki-Hub.git -b kiki-hub` (anywhere)
 2. `pip install Flask flask-cors requests httpx beautifulsoup4 python-dotenv phonenumbers dnspython maigret holehe pyserial yt-dlp Pillow`
 3. Hashcat → `C:\HashCat\hashcat-7.1.2\` + WSL with `hcxtools` (for pcap conversion)
 4. Copy `wifi_cracker/wifi_cracker.py` from the repo to `C:\HashCat\hashcat-7.1.2\wifi_cracker.py`
@@ -85,7 +85,7 @@ Hashcat itself lives outside the repo at `C:\HashCat\hashcat-7.1.2\` — see [In
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/kikikoteyka-dev/Kiki-Osint.git -b kiki-hub C:\Users\<you>\osint-portrait
+git clone https://github.com/kiki-koteyka/Kiki-Hub.git -b kiki-hub C:\Users\<you>\osint-portrait
 cd C:\Users\<you>\osint-portrait
 ```
 
