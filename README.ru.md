@@ -209,6 +209,13 @@ python app.py
 
 ---
 
+## Контрибьюторы
+
+- [Kiki-Koteyka](https://github.com/kiki-koteyka) — владелец проекта
+- [Yagon-Don](https://github.com/Yagon-Don) — контрибьютор
+
+---
+
 ## Disclaimer
 
 Только для образовательных целей и авторизованного тестирования.
