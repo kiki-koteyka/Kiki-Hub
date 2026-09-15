@@ -209,6 +209,13 @@ in Settings instead, none of which have this region check.
 
 ---
 
+## Contributors
+
+- [Kiki-Koteyka](https://github.com/kiki-koteyka) — project owner
+- [Yagon-Don](https://github.com/Yagon-Don) — contributor
+
+---
+
 ## Disclaimer
 
 For educational purposes and authorized security testing only.
