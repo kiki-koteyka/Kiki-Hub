@@ -35,6 +35,1118 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--t1);font-
    see-through strength is exactly what the user configured. */
 html.desktop-transparent{--t1:#ffffff;--t2:rgba(255,255,255,.88);--t3:rgba(255,255,255,.62)}
 select{accent-color:var(--a);color-scheme:dark}
+/* ─── Kali App Style — STUB ──────────────────────────────────────────────
+   Unlike Material Expressive (which reshapes components AND derives its
+   palette from whichever App Theme accent is picked), Kali is meant to
+   look like actual Kali Linux regardless of App Theme — so this forces
+   the real Kali brand palette (Kali Blue #367BF0, Mulberry #CD5C81,
+   near-black) onto the app-wide tokens every component already reads
+   (--bg/--a/--a2/--t1/--t2/--t3/--g-bd*), same trick as Material's --t1-3
+   override above. This is a placeholder pass — global retint only, no
+   per-component M3-style redesign (that's what took Material 6 rounds). */
+html[data-app-style="kali"]{
+  --bg:#050505 !important; --a:#367BF0 !important; --a2:#CD5C81 !important;
+  --t1:#e8ecf1 !important; --t2:rgba(232,236,241,.72) !important; --t3:rgba(232,236,241,.44) !important;
+  --g-bg:rgba(54,123,240,.05) !important; --g-bd:rgba(54,123,240,.16) !important;
+  --g-bd2:rgba(54,123,240,.22) !important; --g-bd-h:rgba(54,123,240,.4) !important;
+}
+/* ─── Material Expressive (M3) App Style ────────────────────────────────
+   This used to just bump --r/--r2 and color-mix() a tonal wash out of the
+   active App Theme's --a/--bg — which made it look like ordinary KikiHub
+   cyan with rounder corners, not Material 3. Real M3 has its own
+   unmistakable palette, so this now carries a full --m3-* token set
+   (Google's actual M3 baseline purple scheme, both light and dark) that
+   is completely independent of --a/--bg. App Theme repaints the rest of
+   the app; App Style reshapes AND repaints just this scope with its own
+   identity — same relationship "Current" already has to its own cyan.
+   --r/--r2 still drive settings-card, tool-card, setting-inp, flip-item/
+   flip-btn, wc-sec/wc-pill/wc-dz/wc-inp/wc-term and the panel insets
+   automatically; everything else below is either a hardcoded-radius
+   component or lives in the OSINT sub-panel (frontend/index.html, fetched
+   into #osint-frame by loadOsintPanel() — a separate document that
+   doesn't inherit :root variables from this page), so it needs an
+   explicit selector. */
+html[data-app-style="material"]{
+  --r:20px;   /* M3 shape scale: "large", for big surfaces */
+  --r2:16px;  /* M3 shape scale: "medium", for inputs/small controls */
+  /* M3 baseline — DARK scheme (default, so switching App Style doesn't
+     blind you inside an otherwise-dark app; Light is one click away).
+     Primary/secondary/tertiary used to be a fixed baseline-purple palette,
+     deliberately independent of the active App Theme accent — pass-2's
+     call, to give Material Expressive "its own identity". User pushback:
+     picking a different App Theme swatch (Vapor/Fjord/etc) should visibly
+     change Material's colors too, not just the rest of the app. Switched
+     to deriving primary from var(--a) via color-mix() against the current
+     scheme's own surface tokens — pure CSS, reacts the instant App Theme
+     changes --a, no JS needed (the one exception is --m3-primary-rgb,
+     synced by _syncM3Rgb() in applyAppTheme()/resetAppTheme() — CSS alone
+     can't split a hex into r,g,b components for the rgba(var(...),alpha)
+     call sites in the OSINT sub-panel). */
+  --m3-primary:var(--a); --m3-on-primary:var(--bg); --m3-primary-rgb:92,214,255;
+  --m3-primary-container:color-mix(in srgb,var(--a) 30%,var(--m3-surface-container,#211F26));
+  --m3-on-primary-container:color-mix(in srgb,var(--a) 80%,var(--m3-on-surface,#E6E0E9));
+  --m3-secondary:color-mix(in srgb,var(--a) 50%,var(--m3-on-surface-variant,#CAC4D0));
+  --m3-secondary-container:color-mix(in srgb,var(--a) 18%,var(--m3-surface-container-high,#2B2930));
+  --m3-on-secondary-container:color-mix(in srgb,var(--a) 70%,var(--m3-on-surface,#E6E0E9));
+  --m3-tertiary:color-mix(in srgb,var(--a2) 70%,var(--m3-on-surface,#E6E0E9));
+  --m3-tertiary-container:color-mix(in srgb,var(--a2) 24%,var(--m3-surface-container,#211F26));
+  --m3-on-tertiary-container:color-mix(in srgb,var(--a2) 75%,var(--m3-on-surface,#E6E0E9));
+  --m3-tertiary-rgb:143,227,255;
+  /* Dark scheme: --m3-primary is already legible as text on a dark surface,
+     so the text-only token is just an alias — the light scheme below
+     redefines it to an actually-darkened variant instead. */
+  --m3-primary-text:var(--m3-primary);
+  /* Official M3 baseline surface-variant (#49454F) sits far enough above
+     surface-container (#211F26) that every filled chip/field lit up like a
+     grey patch against the rest of a mostly-outlined-and-tonal dark UI —
+     softened it toward the container tone instead of using the spec value
+     verbatim; on-surface-variant text/borders are unaffected. */
+  --m3-surface:#141218; --m3-surface-variant:color-mix(in srgb,#49454F 55%,#211F26 45%); --m3-on-surface:#E6E0E9; --m3-on-surface-variant:#CAC4D0;
+  --m3-surface-container:#211F26; --m3-surface-container-high:#2B2930;
+  --m3-outline:#938F99; --m3-outline-variant:#49454F;
+  --m3-error:#F2B8B5; --m3-on-error:#601410; --m3-error-container:#8C1D18; --m3-on-error-container:#F9DEDC;
+  /* Unlike the light scheme below, the dark baseline never retuned --t1/
+     --t2/--t3 — dozens of components across every tab (asst-hdr-title,
+     vk-name/tg-name, portrait text, wc-term-title, fld-v…) read these
+     directly rather than an M3 token, so they kept showing the CURRENT APP
+     THEME's own text color (a cyan-tinted #A8E6FF-ish white set as a real
+     INLINE style on <html> by initAppTheme() — confirmed via getComputedStyle
+     — not a plain stylesheet value, hence the !important here to actually
+     win against it) instead of a neutral M3 on-surface white. Same fix as
+     the light block, same reasoning, just for dark's own on-surface tone. */
+  --t1:#E6E0E9 !important; --t2:rgba(230,224,233,.78) !important; --t3:rgba(230,224,233,.56) !important;
+}
+/* M3 baseline — LIGHT scheme. M3 is arguably at its most "correct" here;
+   dark stays the default so the app doesn't jump brightness on its own. */
+html[data-app-style="material"][data-material-scheme="light"]{
+  /* primary/secondary/tertiary are NOT redeclared here — they're the same
+     color-mix(var(--a)/var(--a2), ...) expressions from the dark block
+     above, which automatically resolve against THIS scope's surface/
+     on-surface tokens (redeclared below) since color-mix reads whichever
+     value is currently cascaded — correct light-mode tinting for free. */
+  --m3-surface:#FEF7FF; --m3-surface-variant:#E7E0EC; --m3-on-surface:#1D1B20; --m3-on-surface-variant:#49454F;
+  --m3-surface-container:#F3EDF7; --m3-surface-container-high:#ECE6F0;
+  --m3-outline:#79747E; --m3-outline-variant:#CAC4D0;
+  --m3-error:#B3261E; --m3-on-error:#FFFFFF; --m3-error-container:#F9DEDC; --m3-on-error-container:#410E0B;
+  /* --t1/--t2/--t3 are the app-wide text-color variables — dozens of
+     components (bg-name-btn's own color:var(--t2), etc.) read them
+     directly rather than inheriting a parent's `color`, so redefining only
+     --m3-on-surface-variant left every one of those elements still white-
+     on-white against the new light M3 surface. Retuning the app-wide
+     tokens to on-surface-ish tones for THIS scope only fixes all of them
+     at once instead of chasing every component's own explicit color rule. */
+  /* !important for the same reason as the dark block above (inline --t1 on
+     <html>, set by initAppTheme(), otherwise always wins). Tried leaving
+     this non-functional at first (the actual pre-existing state across all
+     3 prior passes) to dodge a regression in one spot (see the
+     #osint-frame .hero-sub override right below) — but WITHOUT it, WiFi
+     Cracker and AI Assistant (whose every surface DOES flip light here —
+     .wc-sec/.wc-term/asst bubbles are all m3-surface-container, unlike
+     OSINT's hero which mixes light cards with a permanently-dark aurora
+     backdrop) render near-illegible washed-out text on their new white
+     cards. That's the more common case and the more severe break, so this
+     stays on; the one direct-on-dark-background consumer gets its own
+     scoped fix instead of holding this back for everyone else. */
+  --t1:#1D1B20 !important; --t2:rgba(29,27,32,.72) !important; --t3:rgba(29,27,32,.46) !important;
+  /* --m3-primary IS var(--a) verbatim (see the dark block above) — correct
+     for a dark surface, but real M3 shifts primary to a darker tone (spec
+     "tone 40") specifically for text/icons on a LIGHT surface; this repo's
+     simplified single-hex primary never made that shift, so anything using
+     --m3-primary as a TEXT color (not a filled-button background, which
+     needs the full-strength accent regardless of scheme) went low-contrast
+     accent-on-near-white. A dedicated text-only token, used only where
+     --m3-primary colors text/icons rather than fills. */
+  --m3-primary-text:color-mix(in srgb,var(--m3-primary) 65%,black);
+  /* --g-bg/--g-bd are app-wide "faint white wash" tokens (WiFi Cracker's
+     preview-cell background/border among them) — never scheme-aware, so
+     they stayed near-invisible white-on-white here same as --t1-3 above
+     did before this block existed. */
+  --g-bg:rgba(0,0,0,.035) !important; --g-bd:rgba(0,0,0,.08) !important; --g-bd2:rgba(0,0,0,.1) !important;
+}
+/* .hero-sub sits directly on OSINT's own aurora background in BOTH material
+   schemes (unlike .hero-stats' text, which sits on a card that itself flips
+   tone with the scheme) — the light scheme's on-surface-based --t3 above
+   would otherwise paint it near-black on a still-dark backdrop. */
+html[data-app-style="material"][data-material-scheme="light"] #osint-frame .hero-sub{
+  color:rgba(255,255,255,.55) !important;
+}
+/* Type scale (M3 proportions — Title Medium for section titles, Body
+   Medium for field labels). Keeping the existing system font, not
+   loading Roboto, per the brief — only size/weight/tracking need to be
+   authentic, not the typeface. */
+html[data-app-style="material"] .settings-section-title{
+  font-family:inherit;text-transform:none;
+  font-size:16px;line-height:24px;font-weight:500;letter-spacing:.15px;
+  color:var(--m3-on-surface);
+}
+html[data-app-style="material"] .setting-label{
+  font-family:inherit;text-transform:none;
+  font-size:14px;line-height:20px;font-weight:400;letter-spacing:.25px;
+  color:var(--m3-on-surface-variant);
+}
+/* Filled surfaces (M3 "filled card"): a tone lifted straight off the
+   surface-container step, no accent border at all — separation comes
+   from a quiet elevation shadow instead. */
+html[data-app-style="material"] .settings-card,
+html[data-app-style="material"] .tool-card,
+html[data-app-style="material"] .wc-sec,
+html[data-app-style="material"] .wc-term,
+html[data-app-style="material"] .flip-item{
+  background:var(--m3-surface-container);
+  border:none;
+  color:var(--m3-on-surface);
+  box-shadow:0 1px 2px rgba(0,0,0,.15),0 1px 3px 1px rgba(0,0,0,.1);
+}
+/* User's explicit ask: the WiFi Cracker sidebar (dependencies/target/
+   analysis/actions stacked) doesn't fit the viewport without scrolling —
+   first hit under Material Expressive's roomier spacing, then confirmed
+   the same overflow happens in the default theme too. dependencies is the
+   least actionable of the four sections day-to-day, so it's the one that
+   goes — unconditionally now, not just under material. */
+.wc-sec-deps{
+  display:none;
+}
+/* Reveal Text (.ur-*) had the most leftover hardcoded cyan of any tab —
+   none of these five properties went through var(--a), so the blanket
+   --a redefinition trick from earlier passes never reached them. */
+html[data-app-style="material"] .ur-drop-icon{
+  color:var(--m3-on-surface-variant);
+}
+html[data-app-style="material"] .ur-slider-label{
+  font-family:inherit;text-transform:none;letter-spacing:normal;
+  color:var(--m3-on-surface-variant);
+}
+html[data-app-style="material"] .ur-slider-val{
+  font-family:inherit;color:var(--m3-primary);
+}
+html[data-app-style="material"] input[type=range].ur-range{
+  background:linear-gradient(90deg,var(--m3-primary) var(--pct,50%),var(--m3-surface-variant) var(--pct,50%));
+  border-color:var(--m3-outline-variant);
+}
+html[data-app-style="material"] .ur-custom-sliders{
+  border-color:var(--m3-outline-variant);
+  background:color-mix(in srgb,var(--m3-primary) 4%,transparent);
+}
+html[data-app-style="material"] .ur-divider{
+  background:var(--m3-primary);
+}
+/* .wc-set-modal-card is shared by both the WiFi Cracker AND Assistant
+   settings modals — it never got the actual M3 dialog surface treatment,
+   just the scrollbar tweak below, so it stayed the plain --bg/--g-bd2 box
+   the whole app has by default while everything inside it (buttons,
+   inputs, sliders) was already properly M3-toned. M3 dialogs use a large
+   28px corner and the surface-container-high tone (one step up from the
+   surface-container the WiFi Cracker/Assistant CARDS use, so the dialog
+   reads as sitting above them, not the same flat plane). */
+html[data-app-style="material"] .wc-set-modal-card{
+  background:var(--m3-surface-container-high);
+  border:1px solid var(--m3-outline-variant);
+  border-radius:28px;
+  box-shadow:0 8px 28px -8px rgba(0,0,0,.5);
+}
+html[data-app-style="material"] .wc-set-modal-head{
+  border-bottom-color:var(--m3-outline-variant);
+}
+/* .wc-set-modal-card is shared by both the WiFi Cracker AND Assistant
+   settings modals — it never had a custom scrollbar, so overflow:auto fell
+   back to the bare OS scrollbar, which looked out of place next to
+   everything else here being restyled. */
+html[data-app-style="material"] .wc-set-modal-card::-webkit-scrollbar{
+  width:8px;
+}
+html[data-app-style="material"] .wc-set-modal-card::-webkit-scrollbar-track{
+  background:transparent;
+}
+html[data-app-style="material"] .wc-set-modal-card::-webkit-scrollbar-thumb{
+  background:var(--m3-outline-variant);
+  border-radius:4px;
+}
+html[data-app-style="material"] .wc-set-modal-card::-webkit-scrollbar-thumb:hover{
+  background:var(--m3-outline);
+}
+html[data-app-style="material"] .wc-hdr{
+  background:var(--m3-surface-container-high);
+  border-bottom:1px solid var(--m3-outline-variant);
+  color:var(--m3-on-surface);
+}
+/* Was the M3 "Filled" text field (flat bottom + underline, --m3-surface-
+   variant fill) — on small compact fields (a lot of this app's inputs are
+   short single-line strips, not full-width form fields) the flat bottom
+   corner reads as an abrupt cutoff, and the surface-variant grey sits too
+   far off the surrounding surface-container tone to feel calm. Switched to
+   the M3 "Outlined" variant instead: no fill, a plain 1px outline all the
+   way round, uniform small radius — the same field, but doesn't fight the
+   rounded cards around it. */
+html[data-app-style="material"] .setting-inp,
+html[data-app-style="material"] .wc-inp{
+  background:transparent;
+  color:var(--m3-on-surface);
+  border:1px solid var(--m3-outline);
+  border-radius:4px;
+  font-family:inherit;font-size:14px;
+}
+html[data-app-style="material"] .setting-inp:focus,
+html[data-app-style="material"] .wc-inp:focus{
+  border:2px solid var(--m3-primary);
+}
+html[data-app-style="material"] .setting-inp::placeholder,
+html[data-app-style="material"] .wc-inp::placeholder{
+  color:var(--m3-on-surface-variant);
+}
+html[data-app-style="material"] .wc-dz{
+  border-color:var(--m3-outline);
+  background:var(--m3-surface-variant);
+  color:var(--m3-on-surface-variant);
+  border-radius:16px;
+}
+html[data-app-style="material"] .wc-pill{
+  border-color:var(--m3-outline-variant);
+  background:var(--m3-surface-container-high);
+  color:var(--m3-on-surface-variant);
+}
+/* Filled button (M3): the primary/high-emphasis action — solid fill,
+   zero border, full-pill shape, no accent-tinted outline like the old
+   cyan-styled KikiHub button had. Min 40px tall / 10px-24px padding so
+   "Run hashcat" / "Analyze pcap" never feel cramped. */
+html[data-app-style="material"] .setting-btn,
+html[data-app-style="material"] #osint-frame .btn,
+html[data-app-style="material"] #osint-frame .hf-btn,
+html[data-app-style="material"] #osint-frame .modal-btn-save,
+html[data-app-style="material"] .wc-btn.go{
+  background:var(--m3-primary);
+  color:var(--m3-on-primary);
+  border:none;
+  border-radius:100px;
+  min-height:40px;
+  padding:10px 24px!important;
+  font-family:inherit;text-transform:none;white-space:normal!important;
+  font-size:14px;line-height:20px;font-weight:500;letter-spacing:.1px;
+}
+html[data-app-style="material"] .setting-btn:hover,
+html[data-app-style="material"] #osint-frame .btn:hover,
+html[data-app-style="material"] #osint-frame .hf-btn:hover,
+html[data-app-style="material"] #osint-frame .modal-btn-save:hover,
+html[data-app-style="material"] .wc-btn.go:hover{
+  background:color-mix(in srgb,var(--m3-primary) 88%,var(--m3-on-primary));
+}
+/* Outlined button (M3): secondary/utility actions — the "Browse…" /
+   "Report a Bug" / cancel-style row. Transparent fill, a plain neutral
+   outline (never an accent-tinted rgba border — that was the cyan-styled
+   pattern this is explicitly replacing). 20px "large" shape, not a full
+   pill, because several of these labels ("Open Loading Indicator
+   settings") are long and a stadium shape on a fixed-width button forces
+   an ugly squeeze. */
+html[data-app-style="material"] #tp-hashcat-browse,
+html[data-app-style="material"] #tp-wordlist-browse,
+html[data-app-style="material"] #tp-tshark-browse,
+html[data-app-style="material"] #tool-wsl-copy-btn,
+html[data-app-style="material"] #s-report-bug-btn,
+html[data-app-style="material"] #s-send-feedback-btn,
+html[data-app-style="material"] #s-run-setup-btn,
+html[data-app-style="material"] #s-wc-progress-btn,
+html[data-app-style="material"] #osint-frame .modal-btn-cancel{
+  background:transparent;
+  color:var(--m3-on-surface);
+  border:1px solid var(--m3-outline);
+  border-radius:20px;
+  padding:10px 20px!important;
+  font-family:inherit;text-transform:none;white-space:normal!important;
+  font-size:14px;line-height:20px;font-weight:500;letter-spacing:.1px;
+}
+html[data-app-style="material"] #tp-hashcat-browse:hover,
+html[data-app-style="material"] #tp-wordlist-browse:hover,
+html[data-app-style="material"] #tp-tshark-browse:hover,
+html[data-app-style="material"] #tool-wsl-copy-btn:hover,
+html[data-app-style="material"] #s-report-bug-btn:hover,
+html[data-app-style="material"] #s-send-feedback-btn:hover,
+html[data-app-style="material"] #s-run-setup-btn:hover,
+html[data-app-style="material"] #s-wc-progress-btn:hover,
+html[data-app-style="material"] #osint-frame .modal-btn-cancel:hover{
+  background:color-mix(in srgb,var(--m3-on-surface) 8%,transparent);
+}
+/* Tonal button (M3): medium-emphasis — "analyze pcap" sits between the
+   filled "run hashcat" and the outlined "terminate" isn't right either,
+   so terminate gets the filled-error treatment below and analyze pcap
+   gets the secondary-container tonal fill. */
+html[data-app-style="material"] .wc-btn{
+  background:var(--m3-secondary-container);
+  color:var(--m3-on-secondary-container);
+  border:none;
+  border-radius:100px;
+  padding:10px 20px!important;
+  font-family:inherit;text-transform:none;white-space:normal!important;
+  font-size:14px;line-height:20px;font-weight:500;letter-spacing:.1px;
+}
+html[data-app-style="material"] .wc-btn:hover{
+  background:color-mix(in srgb,var(--m3-secondary-container) 85%,var(--m3-on-secondary-container));
+}
+/* Destructive action ("terminate") — M3 filled button on the error role,
+   not a translucent red like the old cyan-pattern equivalent. */
+html[data-app-style="material"] .wc-btn.stop{
+  background:var(--m3-error-container);
+  color:var(--m3-on-error-container);
+}
+html[data-app-style="material"] .wc-btn.stop:hover{
+  background:color-mix(in srgb,var(--m3-error-container) 85%,var(--m3-on-error-container));
+}
+/* Icon button (M3): flip-btn is icon-only, so it becomes a circular
+   outlined icon button instead of a rounded square. */
+html[data-app-style="material"] .flip-btn{
+  border-radius:50%;
+  background:transparent;
+  border:1px solid var(--m3-outline-variant);
+  color:var(--m3-on-surface-variant);
+}
+html[data-app-style="material"] .flip-btn:hover{
+  background:color-mix(in srgb,var(--m3-on-surface) 8%,transparent);
+  border-color:var(--m3-outline);
+  color:var(--m3-on-surface);
+}
+/* Dropdown trigger (M3 outlined chip) — asst-dd-trigger/-menu/-opt is one
+   reusable component used all over the app: Flipper's COM-port picker,
+   GEOINT's language/model pickers, the Assistant tab's provider/session
+   pickers, and — via transcluded #osint-frame — the OSINT sub-panel's
+   provider/language pickers. Patching it in per call-site (#osint-frame,
+   .flip-port-sel) left every OTHER call-site unstyled — GEOINT's and
+   Assistant's own dropdowns were exactly that gap, confirmed still
+   plain-cyan via computed styles. Blanket-styling the class itself fixes
+   every current call-site (and any future one) in one place. */
+html[data-app-style="material"] .asst-dd-trigger{
+  background:transparent;
+  border:1px solid var(--m3-outline);
+  color:var(--m3-on-surface);
+  border-radius:20px;
+  padding:9px 14px!important;
+  transition:background .2s cubic-bezier(.2,0,0,1),border-color .2s cubic-bezier(.2,0,0,1),color .2s cubic-bezier(.2,0,0,1);
+}
+html[data-app-style="material"] .asst-dd-trigger:hover{
+  background:color-mix(in srgb,var(--m3-on-surface) 8%,transparent);
+}
+/* The blanket padding:...!important above collapsed .ai-select-wrap's own
+   padding-left:46px (reserved for the absolutely-positioned .provider-icon
+   at left:16px/width:18px) back down to a uniform 14px, so the icon started
+   sitting on top of the label text. Only !important beats !important here,
+   and needs the extra .ai-select-wrap specificity to target just this case. */
+html[data-app-style="material"] .ai-select-wrap .asst-dd-trigger{
+  padding-left:46px!important;
+}
+html[data-app-style="material"] .asst-dd.open .asst-dd-trigger{
+  border-color:var(--m3-primary);
+  color:var(--m3-primary);
+}
+html[data-app-style="material"] .asst-dd-menu{
+  background:var(--m3-surface-container);
+  border:1px solid var(--m3-outline-variant);
+  border-radius:16px;
+  box-shadow:0 1px 2px rgba(0,0,0,.15),0 1px 3px 1px rgba(0,0,0,.1);
+}
+html[data-app-style="material"] .asst-dd-opt{
+  border-radius:12px;
+  color:var(--m3-on-surface);
+  transition:background .15s cubic-bezier(.2,0,0,1),color .15s cubic-bezier(.2,0,0,1);
+}
+html[data-app-style="material"] .asst-dd-opt:hover{
+  background:color-mix(in srgb,var(--m3-on-surface) 8%,transparent);
+  color:var(--m3-on-surface);
+}
+html[data-app-style="material"] .asst-dd-opt.selected{
+  background:var(--m3-secondary-container);
+  color:var(--m3-on-secondary-container);
+}
+/* Segmented button (M3) — same reasoning as the dropdown above: .seg-switch/
+   .seg-btn is the app's ONE shared segmented control (nav style, loader
+   style, transparency, slider style/thickness/snap, card glass, WiFi
+   Cracker's crack-style, Assistant's typing/speed/cursor — dozens of call
+   sites throughout Settings), previously patched for #s-material-scheme
+   only. Every other instance measured out as plain --a cyan under an
+   otherwise-M3 app; this now covers all of them at once. */
+html[data-app-style="material"] .seg-switch{
+  background:var(--m3-surface-container-high);
+  border:1px solid var(--m3-outline-variant);
+}
+html[data-app-style="material"] .seg-btn{
+  color:var(--m3-on-surface-variant);
+  font-family:inherit;text-transform:none;letter-spacing:.1px;font-weight:500;font-size:14px;
+  border-color:transparent;
+  transition:background .2s cubic-bezier(.2,0,0,1),color .2s cubic-bezier(.2,0,0,1),border-color .2s cubic-bezier(.2,0,0,1);
+}
+html[data-app-style="material"] .seg-btn:hover{
+  background:color-mix(in srgb,var(--m3-on-surface) 8%,transparent);
+}
+html[data-app-style="material"] .seg-btn.active{
+  background:var(--m3-secondary-container);
+  color:var(--m3-on-secondary-container);
+  border-color:transparent;
+}
+/* Slider (M3) — the app-wide m3-rail component (wraps every native
+   <input type=range>: OSINT's site-limit slider, WiFi Cracker/GEOINT/
+   Settings sliders alike) still painted its active track/handle/inactive
+   track in the plain --a accent under Material Expressive. Fixing the
+   shared component covers every slider in the app, not just OSINT's. */
+html[data-app-style="material"] .m3-active,
+html[data-app-style="material"] .m3-handle{
+  background:var(--m3-primary);
+}
+html[data-app-style="material"] .m3-inactive{
+  background:var(--m3-surface-variant);
+}
+html[data-app-style="material"] .m3-rail:hover .m3-handle,
+html[data-app-style="material"] .m3-rail:focus-within .m3-handle{
+  box-shadow:0 0 0 8px color-mix(in srgb,var(--m3-primary) 12%,transparent);
+}
+/* .sbar / .modal-inp / .close-results-btn / .log-box / .modal-box
+   / .export-bar / .ai-disclaimer* / .hero-stats stay #osint-frame-scoped —
+   these class names are private to the OSINT sub-panel, unlike asst-dd-*/
+   seg-*/m3-* above which are shared app components.
+   .hf-inp used to be Filled-styled here too (bottom-border-only, per the
+   M3 Filled text field pass) but that got replaced project-wide by the
+   Outlined text field style in frontend/index.html's own
+   `html[data-app-style="material"] .hf-inp` rule — this leftover survived
+   and, being #osint-frame-scoped, outranked the Outlined rule's specificity
+   and silently kept rendering the old Filled look. */
+html[data-app-style="material"] #osint-frame .sbar{
+  background:var(--m3-surface-container-high);
+  border:none;
+  color:var(--m3-on-surface);
+  border-radius:100px;
+}
+html[data-app-style="material"] #osint-frame .modal-inp{
+  background:var(--m3-surface-variant);
+  color:var(--m3-on-surface);
+  border:none;
+  border-bottom:1px solid var(--m3-outline);
+  border-radius:4px 4px 0 0;
+}
+html[data-app-style="material"] #osint-frame .modal-inp:focus{
+  border-bottom:2px solid var(--m3-primary);
+}
+html[data-app-style="material"] #osint-frame .close-results-btn{
+  border-radius:50%;
+  background:var(--m3-surface-container-high);
+  color:var(--m3-on-surface-variant);
+  border:none;
+}
+html[data-app-style="material"] #osint-frame .log-box,
+html[data-app-style="material"] #osint-frame .modal-box,
+html[data-app-style="material"] #osint-frame .export-bar,
+html[data-app-style="material"] #osint-frame .ai-disclaimer-block,
+html[data-app-style="material"] #osint-frame .ai-disclaimer,
+html[data-app-style="material"] #osint-frame .hero-stats{
+  background:var(--m3-surface-container);
+  border:1px solid var(--m3-outline-variant);
+  color:var(--m3-on-surface);
+  border-radius:16px;
+  box-shadow:0 1px 2px rgba(0,0,0,.15),0 1px 3px 1px rgba(0,0,0,.1);
+}
+html[data-app-style="material"] #osint-frame .ai-card-icon{
+  background:var(--m3-surface-variant);
+  border:1px solid var(--m3-outline-variant);
+  color:var(--m3-on-surface-variant);
+  border-radius:16px;
+}
+html[data-app-style="material"] #osint-frame .provider-icon{
+  background:var(--m3-primary);
+}
+/* Filter chip (M3, "small" shape = 8px, not pill) — the pre-search hero
+   form's own source toggles (VKontakte / Maigret): unselected is a plain
+   outline, selected fills with the secondary-container tone and tints the
+   leading dot to match, per m3.material.io's filter-chip spec. */
+html[data-app-style="material"] #osint-frame .hf-toggle{
+  background:transparent;
+  border:1px solid var(--m3-outline);
+  color:var(--m3-on-surface-variant);
+  border-radius:8px;
+  transition:background .2s cubic-bezier(.2,0,0,1),border-color .2s cubic-bezier(.2,0,0,1),color .2s cubic-bezier(.2,0,0,1);
+}
+html[data-app-style="material"] #osint-frame .hf-toggle:hover{
+  background:color-mix(in srgb,var(--m3-on-surface) 8%,transparent);
+}
+html[data-app-style="material"] #osint-frame .hf-toggle.on{
+  background:var(--m3-secondary-container);
+  border-color:transparent;
+  color:var(--m3-on-secondary-container);
+}
+html[data-app-style="material"] #osint-frame .hf-dot{
+  background:var(--m3-outline);
+  transition:background .2s cubic-bezier(.2,0,0,1);
+}
+html[data-app-style="material"] #osint-frame .hf-toggle.on .hf-dot{
+  background:var(--m3-on-secondary-container);
+}
+/* Same filter chip, for the sidebar's post-search source toggles (shown
+   once results are active) and the "∞ / no limit" chip next to the
+   slider. Sidebar toggles use a switch-style pill instead of a leading
+   dot — styled as an M3 switch (track+thumb) rather than a checkmark. */
+html[data-app-style="material"] #osint-frame .src-toggle{
+  background:transparent;
+  border:1px solid var(--m3-outline);
+  color:var(--m3-on-surface-variant);
+  border-radius:8px;
+  transition:background .2s cubic-bezier(.2,0,0,1),border-color .2s cubic-bezier(.2,0,0,1);
+}
+html[data-app-style="material"] #osint-frame .src-toggle.on{
+  background:var(--m3-secondary-container);
+  border-color:transparent;
+  color:var(--m3-on-secondary-container);
+}
+html[data-app-style="material"] #osint-frame .pill{
+  background:var(--m3-surface-variant);
+  border:1px solid var(--m3-outline);
+  transition:background .2s cubic-bezier(.2,0,0,1),border-color .2s cubic-bezier(.2,0,0,1);
+}
+html[data-app-style="material"] #osint-frame .pill::after{
+  background:var(--m3-outline);
+  transition:transform .2s cubic-bezier(.2,0,0,1),background .2s cubic-bezier(.2,0,0,1);
+}
+html[data-app-style="material"] #osint-frame .src-toggle.on .pill{
+  background:var(--m3-primary);
+  border-color:transparent;
+}
+html[data-app-style="material"] #osint-frame .src-toggle.on .pill::after{
+  background:var(--m3-on-primary);
+}
+html[data-app-style="material"] #osint-frame .unlim-btn{
+  background:transparent;
+  border:1px solid var(--m3-outline);
+  color:var(--m3-on-surface-variant);
+  border-radius:8px;
+  transition:background .2s cubic-bezier(.2,0,0,1),border-color .2s cubic-bezier(.2,0,0,1),color .2s cubic-bezier(.2,0,0,1);
+}
+html[data-app-style="material"] #osint-frame .unlim-btn:hover{
+  background:color-mix(in srgb,var(--m3-on-surface) 8%,transparent);
+}
+html[data-app-style="material"] #osint-frame .unlim-btn.on{
+  background:var(--m3-secondary-container);
+  border-color:transparent;
+  color:var(--m3-on-secondary-container);
+}
+/* Segmented button (M3) — the hero form's Username/Email/Both switch ships
+   its OWN private hf-segment/hf-seg-btn pair (not the app-wide seg-switch/
+   seg-btn fixed above), so it needs the identical treatment repeated. */
+html[data-app-style="material"] #osint-frame .hf-segment{
+  background:var(--m3-surface-container-high);
+  border:1px solid var(--m3-outline-variant);
+  border-radius:20px;
+}
+html[data-app-style="material"] #osint-frame .hf-seg-btn{
+  color:var(--m3-on-surface-variant);
+  font-family:inherit;font-weight:500;
+  transition:background .2s cubic-bezier(.2,0,0,1),color .2s cubic-bezier(.2,0,0,1);
+  /* .hf-segment is a 20px-radius pill here — the button never got its own
+     radius bump to match and kept the default theme's near-square 6px, so
+     a boxy chip sat inside a stadium-shaped container. That mismatch, not
+     any clipping/shadow bug, is what read as "crooked". */
+  border-radius:16px;
+}
+html[data-app-style="material"] #osint-frame .hf-seg-btn:hover{
+  background:color-mix(in srgb,var(--m3-on-surface) 8%,transparent);
+}
+html[data-app-style="material"] #osint-frame .hf-seg-btn.on{
+  background:var(--m3-secondary-container);
+  border-color:transparent;
+  color:var(--m3-on-secondary-container);
+}
+html[data-app-style="material"] #osint-frame .hf-limit-row{
+  background:var(--m3-surface-container-high);
+  border:1px solid var(--m3-outline-variant);
+}
+/* Switch (M3) — the hero form's AI Analysis toggle ships its OWN private
+   ai-power-btn/-track/-knob triplet, independent of the src-toggle/pill
+   switch fixed above. Thumb grows slightly on when it's on, echoing M3's
+   real "thumb grows to hold a checkmark" motion without adding a
+   checkmark icon into markup that wasn't built for one. */
+html[data-app-style="material"] #osint-frame .ai-power-track{
+  background:var(--m3-surface-variant);
+  border:1px solid var(--m3-outline);
+  transition:background .2s cubic-bezier(.2,0,0,1),border-color .2s cubic-bezier(.2,0,0,1);
+}
+html[data-app-style="material"] #osint-frame .ai-power-btn input:checked~.ai-power-track{
+  background:var(--m3-primary);
+  border-color:transparent;
+}
+html[data-app-style="material"] #osint-frame .ai-power-knob{
+  background:var(--m3-outline);
+  transition:transform .2s cubic-bezier(.2,0,0,1),background .2s cubic-bezier(.2,0,0,1);
+}
+html[data-app-style="material"] #osint-frame .ai-power-btn input:checked~.ai-power-track~.ai-power-knob{
+  background:var(--m3-on-primary);
+  transform:translate(17px,-50%) scale(1.3);
+}
+/* .tag / .alt-user-pill / .key-status are already pill-shaped (20px on a
+   short chip) in the base design — nothing to change for M3 there. */
+/* ── Material Expressive, pass 4 — WiFi Cracker + AI Assistant decorative/
+   text layer ─────────────────────────────────────────────────────────────
+   Passes 1-3 only reached these two tabs' interactive widgets (buttons,
+   inputs, the shared seg-switch/asst-dd/m3-rail components above). Every
+   status dot, section label, progress fill, log/terminal line color, avatar
+   glow, tool-card accent and the send button in these two tabs still read
+   the plain var(--a)/var(--a2) cyan or a hardcoded rgba(92,214,255,…) —
+   this app's --a is deliberately NOT redefined for the whole app under
+   Material (see the big comment at the top of this scope: App Style
+   reshapes just its own scope, App Theme still owns --a everywhere else),
+   so each consumer below is retinted individually instead. */
+html[data-app-style="material"] .wc-hdr-logo,
+html[data-app-style="material"] .wc-hdr-logo::before{
+  color:var(--m3-primary-text);
+}
+html[data-app-style="material"] .wc-hdr-logo::before{
+  background:var(--m3-primary);
+}
+html[data-app-style="material"] .wc-status-dot.ok,
+html[data-app-style="material"] .wc-status-dot.run{
+  background:var(--m3-primary);
+}
+html[data-app-style="material"] .wc-sec:hover{
+  border-color:var(--m3-outline);
+  background:color-mix(in srgb,var(--m3-on-surface) 6%,transparent);
+}
+html[data-app-style="material"] .wc-sec::before{
+  background:radial-gradient(220px circle at var(--mx,50%) var(--my,50%),color-mix(in srgb,var(--m3-primary) 10%,transparent),transparent 70%);
+}
+/* target/analysis/actions are ONE card now, not three — but the base
+   per-.wc-sec hover (lift + own tinted background + mouse-follow glow,
+   all independent per element) still fires on whichever third the cursor
+   happens to be over, instantly un-merging the card visually on hover
+   even with the static dividers gone. Kill hover feedback entirely on
+   these three specifically (deps/any other standalone .wc-sec elsewhere
+   keep it). */
+html[data-app-style="material"] .wc-sec-target:hover,
+html[data-app-style="material"] .wc-sec-analysis:hover,
+html[data-app-style="material"] .wc-sec-perf:hover,
+html[data-app-style="material"] .wc-sec-actions:hover{
+  border-color:transparent;
+  /* NOT `background:none` — that doesn't restore the resting fill, it
+     makes the hovered third see-through to whatever's behind the card,
+     punching a visible hole exactly where the cursor is. Explicitly
+     re-assert the same resting surface-container tone instead. */
+  background:var(--m3-surface-container);
+  transform:none;
+  box-shadow:none;
+}
+html[data-app-style="material"] .wc-sec-target:hover::before,
+html[data-app-style="material"] .wc-sec-analysis:hover::before,
+html[data-app-style="material"] .wc-sec-perf:hover::before,
+html[data-app-style="material"] .wc-sec-actions:hover::before{
+  opacity:0;
+}
+html[data-app-style="material"] .wc-sec-h{
+  color:var(--m3-on-surface-variant);
+}
+html[data-app-style="material"] .wc-sec-h::before{
+  background:var(--m3-outline);
+}
+html[data-app-style="material"] .wc-pill.ok{
+  border-color:var(--m3-outline);
+  color:var(--m3-primary-text);
+  background:color-mix(in srgb,var(--m3-primary) 8%,transparent);
+}
+/* Every color/radius/shadow token here was already correct M3 — the panel
+   still read as "terminal with rounded corners" because the DENSITY never
+   changed: 8px gap between cards (barely more than their own border, so
+   three same-toned surface-container boxes visually fused into one
+   column), 9px letter-spaced-.18em section labels, 4px-tall data rows.
+   M3's whole visual signature is generous breathing room — this widens
+   gaps/padding/type sizes without touching any structure or content. */
+/* One card, not three. Explicit wc-sec-target/-analysis/-actions classes
+   on the markup rather than nth-of-type(2/3/4) — deps is display:none
+   under material but still counts toward sibling-index, and nth-of-type
+   breaks the moment a sibling gets added/removed/reordered.
+   The radius/clip used to live on the individual target/actions sections
+   (rounded top / rounded bottom respectively) — looked right at rest, but
+   .wc-side is the actual scroll container (this column doesn't fit
+   target+analysis+actions at most window heights), so scrolling moved
+   wc-sec-target's rounded top corner along with the content, right off
+   the top of the visible area — leaving the square-cornered analysis
+   section flush against the frame with no rounding in sight. Moving the
+   radius + overflow:hidden onto .wc-side itself makes the rounded frame
+   part of the (fixed) viewport instead of the (scrolling) content — it
+   can never scroll away. Just the radius, NOT `overflow:hidden` — that
+   shorthand would reset the base rule's `overflow-y:auto` (this column's
+   actual scroll mechanism) back to hidden and kill scrolling outright.
+   overflow-y:auto already establishes a clip region on its own axis, and
+   per spec an axis left at the visible default (overflow-x here) computes
+   to auto the moment its sibling axis isn't visible — so corners on every
+   side clip correctly with zero extra property. */
+html[data-app-style="material"] .wc-side{
+  gap:0;
+  border-radius:24px;
+  background:var(--m3-surface-container);
+  /* .wc-side is a grid item that stretches (the default align-self) to
+     match .wc-term's height, both columns sharing one row — painting the
+     background (above) fixed the "no floor" look but left a real dead
+     zone: empty painted card below "actions" down to wherever .wc-term
+     happens to end. User explicitly doesn't want that space to exist at
+     all, painted or not — size to content instead of stretching.
+     max-height:100% is the safety net: if a still-shorter window makes
+     even the responsive-height-trimmed content taller than the row, this
+     caps it there and overflow-y:auto (base rule) takes over, rather than
+     the card pushing past the row and getting clipped by .wc-body's own
+     overflow:hidden with no scroll affordance at all. */
+  align-self:start;
+  max-height:100%;
+}
+html[data-app-style="material"] .wc-sec-target,
+html[data-app-style="material"] .wc-sec-analysis,
+html[data-app-style="material"] .wc-sec-perf,
+html[data-app-style="material"] .wc-sec-actions{
+  border-radius:0;
+}
+/* Actions row: reference stacks Run hashcat (filled, primary) beside
+   Analyze pcap (tonal) instead of the app's default full-width stacked
+   buttons. DOM order is analyze-then-run — `order` flips the visual
+   sequence to match the reference without touching the click handlers. */
+html[data-app-style="material"] .wc-sec-actions .wc-sec-b{
+  flex-direction:row;flex-wrap:wrap;
+}
+html[data-app-style="material"] .wc-sec-actions .wc-btn{
+  flex:1 1 0;min-width:0;padding:10px 14px!important;font-size:13px;
+}
+html[data-app-style="material"] #wc-btc{order:1}
+html[data-app-style="material"] #wc-bta{order:2}
+html[data-app-style="material"] .wc-res{order:3;flex-basis:100%}
+/* Reverted the in-card header experiment (icon+title, status/gear
+   physically relocated via JS) — the top .wc-hdr bar stays put, just
+   restyled as its own M3 card instead of a flat full-bleed strip. */
+html[data-app-style="material"] .wc-hdr{
+  margin:10px 10px 0;
+  border-radius:20px;
+  border:1px solid var(--m3-outline-variant);
+  box-shadow:0 1px 2px rgba(0,0,0,.15),0 1px 3px 1px rgba(0,0,0,.1);
+}
+html[data-app-style="material"] .wc-sec-h{
+  padding:14px 18px;font-size:12px;letter-spacing:.08em;font-weight:600;
+}
+html[data-app-style="material"] .wc-sec-b{
+  padding:16px 18px;gap:12px;
+}
+html[data-app-style="material"] .wc-row{
+  padding:8px 0;
+}
+html[data-app-style="material"] .wc-lbl{
+  font-size:11px;letter-spacing:.06em;
+}
+html[data-app-style="material"] .wc-dz:hover,
+html[data-app-style="material"] .wc-dz.over{
+  border-color:var(--m3-outline);
+  background:color-mix(in srgb,var(--m3-on-surface) 6%,transparent);
+}
+html[data-app-style="material"] .wc-dz-f{
+  color:var(--m3-primary-text);
+}
+/* Recoloring var(--a) never made this read as M3 — the terminal identity
+   here is TYPOGRAPHIC, not just chromatic: monospace, uppercase, wide
+   letter-spacing, ASCII decoration (`//`, `—`). M3 type is regular-case
+   proportional text at specific size/weight steps (Title Large, Body
+   Medium, Label Large) — has to actually change, not just recolor. */
+html[data-app-style="material"] .wc-hdr-logo{
+  font-family:inherit;text-transform:none;letter-spacing:normal;
+  font-size:22px;line-height:28px;font-weight:400;
+  color:var(--m3-on-surface);
+}
+html[data-app-style="material"] .wc-hdr-sub{
+  font-family:inherit;letter-spacing:normal;
+  font-size:14px;color:var(--m3-on-surface-variant);
+}
+html[data-app-style="material"] .wc-sec-h{
+  font-family:inherit;text-transform:none;letter-spacing:.1px;
+  font-size:14px;font-weight:500;
+}
+html[data-app-style="material"] .wc-pill{
+  font-family:inherit;letter-spacing:normal;font-size:13px;font-weight:500;
+}
+html[data-app-style="material"] .wc-dz-ico{
+  display:none; /* the "//" ASCII glyph has no M3 equivalent worth faking — a plain dashed outline + label already reads as an upload area without it */
+}
+html[data-app-style="material"] .wc-dz-t{
+  /* "CLICK TO BROWSE" is typed as literal caps in the markup, not a CSS
+     transform — text-transform can't un-shout literal content, so this
+     lowercases it instead of leaving it the one shouting label on an
+     otherwise-calm M3 drop zone. */
+  font-family:inherit;letter-spacing:normal;font-size:16px;font-weight:400;
+  text-transform:lowercase;
+}
+html[data-app-style="material"] .wc-lbl{
+  font-family:inherit;text-transform:none;letter-spacing:.25px;font-size:14px;
+  color:var(--m3-on-surface-variant);
+}
+html[data-app-style="material"] .wc-rk{
+  font-family:inherit;text-transform:none;letter-spacing:normal;font-size:14px;
+  color:var(--m3-on-surface-variant);width:64px;
+}
+html[data-app-style="material"] .wc-rv{
+  font-family:inherit;font-size:14px;color:var(--m3-on-surface);
+}
+html[data-app-style="material"] .wc-ph{
+  font-family:inherit;font-size:12px;color:var(--m3-on-surface-variant);
+}
+html[data-app-style="material"] .wc-row{
+  border-bottom-color:var(--m3-outline-variant);
+}
+html[data-app-style="material"] .wc-rv.ok,
+html[data-app-style="material"] .wc-ph.ok,
+html[data-app-style="material"] .wc-r-l,
+html[data-app-style="material"] .wc-r-v,
+html[data-app-style="material"] .wc-hex-row,
+html[data-app-style="material"] .wc-t-ok .wc-tm,
+html[data-app-style="material"] .wc-t-result .wc-tm{
+  color:var(--m3-primary-text);
+}
+html[data-app-style="material"] .wc-pf{
+  background:linear-gradient(90deg,var(--m3-primary),color-mix(in srgb,var(--m3-primary) 55%,var(--m3-tertiary)));
+}
+/* Lite Mode's bespoke checkbox->M3-switch got replaced by the Workload
+   seg-switch (#s-wc-workload, reuses the app-wide .seg-switch/.seg-btn
+   already styled for material a few rules up) — no bespoke CSS needed. */
+html[data-app-style="material"] .wc-btn.go{
+  background:var(--m3-primary);
+  border-color:transparent;
+  color:var(--m3-on-primary);
+}
+html[data-app-style="material"] .wc-btn.go:hover{
+  background:color-mix(in srgb,var(--m3-primary) 88%,var(--m3-on-primary));
+  color:var(--m3-on-primary);
+}
+html[data-app-style="material"] .wc-res{
+  border-color:var(--m3-outline-variant);
+  background:var(--m3-surface-container);
+}
+html[data-app-style="material"] .wc-glitch-fill{
+  background:var(--m3-primary);
+}
+html[data-app-style="material"] .wc-glitch-scan{
+  background:color-mix(in srgb,var(--m3-primary) 55%,transparent);
+}
+html[data-app-style="material"] .wc-side::-webkit-scrollbar-thumb,
+html[data-app-style="material"] .wc-term-body::-webkit-scrollbar-thumb{
+  background:color-mix(in srgb,var(--m3-outline) 45%,transparent);
+}
+/* .wc-radial-fill/wcprev-*-fill paths are injected via innerHTML with a
+   literal stroke="var(--a)" presentation attribute (see attachWaveBar-
+   adjacent code) — an exact-value attribute selector (not a wildcard) is
+   the only way to reach them since their ids are dynamic per instance. CSS
+   stylesheet rules always outrank a presentation attribute, no !important
+   needed here (unlike the inline style.color case below). */
+html[data-app-style="material"] .wc-radial svg path[stroke="var(--a)"]{
+  stroke:var(--m3-primary-text);
+}
+/* st() in the WiFi Cracker script sets #wc-stxt's color via el.style.color
+   (a real inline style, not a presentation attribute) to the literal string
+   "var(--a)" — inline style specificity beats any stylesheet selector
+   regardless of how it's written, so this is the one legitimate spot in
+   this pass that needs !important to win. */
+html[data-app-style="material"] #wc-stxt{
+  color:var(--m3-primary-text) !important;
+}
+
+html[data-app-style="material"] .asst-hdr-avatar,
+html[data-app-style="material"] .asst-new-chat,
+html[data-app-style="material"] .asst-md-h,
+html[data-app-style="material"] .asst-tool-icon,
+html[data-app-style="material"] .dock-toggle{
+  color:var(--m3-primary-text);
+}
+html[data-app-style="material"] .asst-new-chat:hover{
+  background:color-mix(in srgb,var(--m3-primary) 10%,transparent);
+}
+html[data-app-style="material"] .asst-sessions-list::-webkit-scrollbar-thumb,
+html[data-app-style="material"] .asst-messages::-webkit-scrollbar-thumb{
+  background:color-mix(in srgb,var(--m3-outline) 45%,transparent);
+}
+html[data-app-style="material"] .asst-session-row.active{
+  background:var(--m3-secondary-container);
+}
+html[data-app-style="material"] .asst-session-row.active .asst-session-title{
+  color:var(--m3-on-secondary-container);
+}
+html[data-app-style="material"] .asst-msg-row.assistant .asst-msg-inner{
+  background:var(--m3-surface-container);
+  border-color:var(--m3-outline-variant);
+}
+html[data-app-style="material"] .asst-tool-card.open{
+  border-color:var(--m3-primary);
+}
+html[data-app-style="material"] .asst-tool-jump{
+  color:var(--m3-primary-text);
+  background:color-mix(in srgb,var(--m3-primary) 8%,transparent);
+  border-color:color-mix(in srgb,var(--m3-primary) 20%,transparent);
+}
+html[data-app-style="material"] .asst-tool-jump:hover{
+  background:color-mix(in srgb,var(--m3-primary) 16%,transparent);
+}
+html[data-app-style="material"] .asst-input-pill:focus-within{
+  border-color:var(--m3-outline);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--m3-primary) 8%,transparent);
+}
+html[data-app-style="material"] .asst-send-btn{
+  background:var(--m3-primary);
+  color:var(--m3-on-primary);
+}
+html[data-app-style="material"] .asst-send-btn:hover{
+  background:color-mix(in srgb,var(--m3-primary) 88%,var(--m3-on-primary));
+}
+/* The input pill's focus glow was added IN a previous Material pass (just
+   recolored to --m3-primary) — but an ambient box-shadow halo around a
+   focused field isn't an M3 pattern at all (M3 filled/outlined fields
+   signal focus with a border/outline change only). Border-only, matching
+   setting-inp/wc-inp's own filled-field focus treatment above. */
+html[data-app-style="material"] .asst-input-pill:focus-within{
+  border-color:var(--m3-primary);
+  box-shadow:none;
+}
+
+/* ── Material Expressive, pass 5 — the rest of the app's terminal
+   typography ─────────────────────────────────────────────────────────────
+   Passes 1-4 only reached WiFi Cracker + AI Assistant's own interactive
+   widgets and two Settings labels. Every other tab (Downloader, Reveal
+   Text, GEOINT, Flipper, Settings' own remaining rows, the nav dock label,
+   the onboarding wizard) still renders its headings/labels/buttons/chips in
+   'JetBrains Mono' + uppercase + wide letter-spacing — recoloring never
+   fixed this because the identity clash is typographic, not chromatic (see
+   the comment above wc-hdr-logo). Blanket-converting to font-family:inherit
+   (the app's own Hanken Grotesk/Bricolage Grotesque, already loaded and
+   used elsewhere) + text-transform:none is the same fix repeated for every
+   remaining consumer, grouped by tab below.
+
+   Kept monospace ON PURPOSE (real log/hex/code content, not chrome):
+     .wc-ts/.wc-tm            — actual WiFi Cracker stdout log lines
+     .wc-hex, .wc-hex-*       — the hex-candidate progress variant (ASCII/hex
+                                IS the content here, not decoration)
+     .wc-r-v                  — the cracked password readout itself: keeping
+                                it monospace disambiguates 1/l/I/0/O in a
+                                string the user needs to copy correctly
+     .asst-msg-inner code/pre — literal code blocks in chat replies
+     .asst-tool-raw           — raw tool-call JSON, log-like by nature
+     .tool-wsl-cmd            — a literal shell command meant to be copied */
+html[data-app-style="material"] .icon-btn__label{
+  font-family:inherit;letter-spacing:.1px;
+}
+html[data-app-style="material"] .asst-hdr-sub,
+html[data-app-style="material"] .asst-dd-trigger,
+html[data-app-style="material"] .asst-dd-opt,
+html[data-app-style="material"] .asst-sessions-empty,
+html[data-app-style="material"] .asst-empty div,
+html[data-app-style="material"] .asst-md-h,
+html[data-app-style="material"] .asst-tool-label,
+html[data-app-style="material"] .asst-tool-status,
+html[data-app-style="material"] .asst-tool-jump{
+  font-family:inherit;text-transform:none;letter-spacing:.1px;
+}
+/* Settings: theme/loader/tool-path/onboarding rows the color-only passes
+   never touched. */
+html[data-app-style="material"] .theme-preset-label,
+html[data-app-style="material"] .bg-name-btn,
+html[data-app-style="material"] .loader-preview-item .num,
+html[data-app-style="material"] .tool-wsl-note,
+html[data-app-style="material"] .ui-lang-btn,
+html[data-app-style="material"] .onboard-skip,
+html[data-app-style="material"] .onboard-step-counter,
+html[data-app-style="material"] .onboard-btn,
+html[data-app-style="material"] .onboard-choice{
+  font-family:inherit;text-transform:none;letter-spacing:.1px;
+}
+/* Downloader + GEOINT (.tool- / .geo- shared component set). */
+html[data-app-style="material"] .tool-meta,
+html[data-app-style="material"] .tool-err,
+html[data-app-style="material"] .tool-loading,
+html[data-app-style="material"] .geo-file-btn,
+html[data-app-style="material"] .geo-file-name,
+html[data-app-style="material"] .geo-spoof-toggle-btn,
+html[data-app-style="material"] .geo-spoof-strip-row,
+html[data-app-style="material"] .geo-coords,
+html[data-app-style="material"] .geo-revimg-label,
+html[data-app-style="material"] .geo-exif-toggle,
+html[data-app-style="material"] .geo-exif-table,
+html[data-app-style="material"] .geo-ai-label,
+html[data-app-style="material"] .geo-ai-map-caption,
+html[data-app-style="material"] .geo-ai-map-fallback,
+html[data-app-style="material"] .geo-ai-disclaimer{
+  font-family:inherit;text-transform:none;letter-spacing:.1px;
+}
+/* Reveal Text. */
+html[data-app-style="material"] .ur-drop-text,
+html[data-app-style="material"] .ur-slider-label,
+html[data-app-style="material"] .ur-slider-val,
+html[data-app-style="material"] .ur-mode-tab,
+html[data-app-style="material"] .ur-preset-btn,
+html[data-app-style="material"] .ur-preset-btn small,
+html[data-app-style="material"] .ur-compare-hint,
+html[data-app-style="material"] .ur-compare-labels{
+  font-family:inherit;text-transform:none;letter-spacing:.1px;
+}
+/* Flipper Zero. */
+html[data-app-style="material"] .flip-conn-txt,
+html[data-app-style="material"] .flip-bc-seg,
+html[data-app-style="material"] .flip-empty-txt,
+html[data-app-style="material"] .flip-empty-hint,
+html[data-app-style="material"] .flip-item-name,
+html[data-app-style="material"] .flip-item-size,
+html[data-app-style="material"] .flip-ext,
+html[data-app-style="material"] .flip-err,
+html[data-app-style="material"] .flip-warn,
+html[data-app-style="material"] .flip-ov-name,
+html[data-app-style="material"] .flip-ov-size,
+html[data-app-style="material"] .flip-ov-step-lbl,
+html[data-app-style="material"] .flip-ov-err{
+  font-family:inherit;text-transform:none;letter-spacing:.1px;
+}
+/* WiFi Cracker leftovers pass 4 didn't reach (header sub/right cluster,
+   settings-modal title, result label, progress/radial readouts, style-
+   preview captions, terminal chrome — NOT the log body itself). */
+html[data-app-style="material"] .wc-hdr-sub,
+html[data-app-style="material"] .wc-hdr-r,
+html[data-app-style="material"] .wc-set-modal-head,
+html[data-app-style="material"] .wc-r-l,
+html[data-app-style="material"] .wc-prog-wl,
+html[data-app-style="material"] .wc-prog-pct,
+html[data-app-style="material"] .wc-radial-pct,
+html[data-app-style="material"] .wc-preview-label,
+html[data-app-style="material"] .wc-term-title,
+html[data-app-style="material"] .wc-term-clr{
+  font-family:inherit;text-transform:none;letter-spacing:.1px;
+}
+/* nav dock text style ("tmux"/"breadcrumb") layered under Material: same
+   sans conversion, so switching that separate Settings toggle doesn't
+   reintroduce monospace nav labels on top of an otherwise-M3 app. */
+html[data-app-style="material"][data-nav-text-style="tmux"] .icon-btns,
+html[data-app-style="material"][data-nav-text-style="breadcrumb"] .icon-btns,
+html[data-app-style="material"] .icon-btn__abbr{
+  font-family:inherit;
+}
+/* Settings-panel preview captions ("PREVIEW", "SHADER COLOR"…) carry the
+   monospace font as an INLINE style attribute rather than a class, so no
+   class selector above can reach them. An attribute selector matching the
+   style text is the only way to hit every one of them from one rule — this
+   only ever touches font-family/text-transform/letter-spacing, never
+   layout, so it's not the wildcard-class risk the "no [class*=...]" rule is
+   about. Inline style normally beats a stylesheet rule regardless of
+   specificity, hence !important. */
+html[data-app-style="material"] [style*="JetBrains Mono"]{
+  font-family:inherit!important;
+}
+/* Three different cases hide behind the same inline font-family, and they
+   need DIFFERENT text-transform fixes:
+   - .app-style-badge/.row-sub already carry correctly-cased source text
+     ("App Style", JS-set 'active'/'off') plus their OWN inline
+     text-transform:uppercase — that transform is what needs undoing.
+   - .app-style-icon (the "Aa"/"M3"/"K" style-picker glyphs) is
+     deliberately mixed-case — it's a logotype, not a shouting label, so
+     it needs to be left alone entirely, same as the badge/row-sub case.
+     Missing this exclusion first shipped as a real regression: every
+     App Style card's icon got force-lowercased to "aa"/"m3"/"k".
+   - every other JetBrains-Mono inline span here (PREVIEW, SHADER COLOR,
+     SHADER SPEED, CONTAINER, BAR THICKNESS, SYNC…) is typed as literal
+     ALL-CAPS text with no CSS transform at all — text-transform can't
+     un-shout literal caps (lowercase is the closest a stylesheet can get
+     without editing content two app styles share), so those get
+     lowercased instead. */
+html[data-app-style="material"] .app-style-badge,
+html[data-app-style="material"] .app-style-icon,
+html[data-app-style="material"] .row-sub{
+  text-transform:none!important;letter-spacing:.1px!important;
+}
+html[data-app-style="material"] [style*="JetBrains Mono"]:not(.app-style-badge):not(.app-style-icon):not(.row-sub){
+  text-transform:lowercase!important;letter-spacing:.1px!important;
+}
 .aurora-container{position:fixed;inset:0;z-index:0;pointer-events:none;width:100%;height:100%;opacity:.5;mix-blend-mode:screen;overflow:hidden}
 .aurora-container canvas{display:block;width:100%;height:100%}
 .bg-orbs{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
@@ -164,6 +1276,10 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;back
    ceiling as the user side so a long reply still wraps sanely. */
 .asst-msg-row.assistant>div{min-width:0;max-width:78%}
 .asst-msg-inner{font-size:14px;line-height:1.6;color:var(--t1);white-space:pre-wrap;word-break:break-word}
+.text-type{display:inline;white-space:pre-wrap}
+.text-type__cursor{margin-left:.15rem;display:inline-block;animation:asstCursorBlink .5s steps(1) infinite}
+.text-type__cursor--hidden,.text-type__cursor--idle{display:none}
+@keyframes asstCursorBlink{0%,50%{opacity:1}50.01%,100%{opacity:0}}
 /* No avatars — alignment (right/left) already says who's talking, and a
    crooked hand-drawn icon per message was worse than no icon at all. What's
    still missing without them is a beat of "is this even two different
@@ -335,6 +1451,13 @@ html[data-nav-style="dock"] .icon-btn-sep{height:30px}
 .icon-btn:hover .icon-btn__label{opacity:1;transform:translateX(-50%) translateY(4px)}
 .icon-btn.is-active .icon-btn__back{transform:rotate(0deg)!important;background:linear-gradient(var(--a),color-mix(in srgb,var(--a) 55%,black))!important;box-shadow:.5em -.5em .75em hsla(223,10%,10%,.15)}
 .icon-btn.is-active::after{content:'';position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.8)}
+.icon-btn__badge{position:absolute;top:2px;right:2px;width:9px;height:9px;border-radius:50%;background:transparent;pointer-events:none;z-index:2}
+.icon-btn__badge.run{background:var(--a);animation:iconBtnBadgePulse 1.2s ease-in-out infinite}
+@keyframes iconBtnBadgePulse{
+  0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--a) 55%,transparent)}
+  70%{box-shadow:0 0 0 6px color-mix(in srgb,var(--a) 0%,transparent)}
+  100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--a) 0%,transparent)}
+}
 .icon-btn-sep{width:1px;height:36px;align-self:center;flex-shrink:0;background:linear-gradient(180deg,transparent,rgba(255,255,255,.2) 30%,rgba(255,255,255,.2) 70%,transparent)}
 .c-flipper .icon-btn__front{background-image:none}
 .c-flipper .icon-btn__front::after{content:'';position:absolute;inset:-3%;background:url('/flipper_logo.png') center/contain no-repeat;filter:brightness(0) invert(1);opacity:.9}
@@ -421,6 +1544,78 @@ html[data-nav-style="rail"] .icon-btn__label{
 html[data-nav-style="rail"] .icon-btns.rail-open .icon-btn__label{opacity:1;width:auto}
 html[data-nav-style="rail"] .icon-btn.is-active .icon-btn__label{color:var(--a)}
 html[data-nav-style="rail"] .icon-btn-sep{width:calc(100% - 4px);height:1px;margin:2px auto;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15) 20%,rgba(255,255,255,.15) 80%,transparent)}
+
+/* ── Nav Style: tmux / breadcrumb — a flat, always-visible text nav
+   instead of the icon+hover-label metaphor. There's no icon to collapse
+   to, so both Dock and Rail show full labels all the time here; layered
+   on top of the dock/rail rules above via the same [data-nav-style]
+   attribute rather than duplicating their layout logic. ── */
+html[data-nav-style="dock"][data-nav-text-style="tmux"] .icon-btn,
+html[data-nav-style="dock"][data-nav-text-style="breadcrumb"] .icon-btn{
+  width:auto;height:auto;perspective:none;transform-style:flat;padding:8px 12px;
+}
+html[data-nav-text-style="tmux"] .icon-btn__back,
+html[data-nav-text-style="breadcrumb"] .icon-btn__back,
+html[data-nav-text-style="tmux"] .icon-btn__front,
+html[data-nav-text-style="breadcrumb"] .icon-btn__front,
+html[data-nav-text-style="tmux"] .icon-btn__icon,
+html[data-nav-text-style="breadcrumb"] .icon-btn__icon{display:none}
+html[data-nav-text-style="tmux"] .icon-btns,
+html[data-nav-text-style="breadcrumb"] .icon-btns{
+  font-family:'JetBrains Mono',monospace;
+  background:rgba(4,17,26,.7);border:1px solid rgba(140,220,255,.18);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+}
+html[data-nav-style="dock"][data-nav-text-style="tmux"] .icon-btns,
+html[data-nav-style="dock"][data-nav-text-style="breadcrumb"] .icon-btns{border-radius:8px;padding:4px}
+/* Dock never collapses, so the label just replaces the icon outright. */
+html[data-nav-style="dock"][data-nav-text-style="tmux"] .icon-btn__label,
+html[data-nav-style="dock"][data-nav-text-style="breadcrumb"] .icon-btn__label{
+  position:static !important;opacity:1 !important;width:auto !important;transform:none !important;
+  font-size:11px;letter-spacing:.03em;color:rgba(255,255,255,.5);
+}
+/* Rail keeps its own collapse/expand rules from the block above (base
+   rail CSS already toggles the label's opacity/width via .rail-open) —
+   this only sets the font, it doesn't touch visibility. */
+html[data-nav-style="rail"][data-nav-text-style="tmux"] .icon-btn__label,
+html[data-nav-style="rail"][data-nav-text-style="breadcrumb"] .icon-btn__label{
+  font-size:11px;letter-spacing:.03em;
+}
+html[data-nav-text-style="tmux"] .icon-btn.is-active .icon-btn__label,
+html[data-nav-text-style="breadcrumb"] .icon-btn.is-active .icon-btn__label{color:var(--a);font-weight:700}
+html[data-nav-text-style="tmux"] .icon-btn.is-active,
+html[data-nav-text-style="breadcrumb"] .icon-btn.is-active{background:color-mix(in srgb,var(--a) 12%,transparent) !important}
+/* tmux: "1: name", running item starred */
+html[data-nav-text-style="tmux"] .icon-btns{counter-reset:navnum}
+html[data-nav-text-style="tmux"] .icon-btn{counter-increment:navnum}
+html[data-nav-text-style="tmux"] .icon-btn__label::before{content:counter(navnum) ':';color:rgba(255,255,255,.3);margin-right:5px}
+html[data-nav-text-style="tmux"] .icon-btn.is-active .icon-btn__label::after{content:'*'}
+html[data-nav-style="dock"][data-nav-text-style="tmux"] .icon-btn-sep{background:rgba(140,220,255,.18)}
+/* breadcrumb: every item gets a leading slash */
+html[data-nav-text-style="breadcrumb"] .icon-btn__label::before{content:'/';color:rgba(140,220,255,.35);margin-right:1px}
+html[data-nav-text-style="breadcrumb"] .icon-btn-sep{display:none}
+/* Rail collapsed: no icon and no room for the full label either — a
+   2-letter ASCII tag sits in the same slot the real icon used to,
+   exactly like a tmux/screen window abbreviation. Collapse/expand and
+   the panel-push-over both stay the stock rail mechanism (toggleRail()),
+   untouched — this only decides which of {abbr, label} is visible. */
+.icon-btn__abbr{display:none}
+html[data-nav-style="rail"][data-nav-text-style="tmux"] .icon-btns:not(.rail-open) .icon-btn__abbr,
+html[data-nav-style="rail"][data-nav-text-style="breadcrumb"] .icon-btns:not(.rail-open) .icon-btn__abbr{
+  display:flex;align-items:center;justify-content:center;width:100%;position:relative;
+  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.02em;color:rgba(255,255,255,.5);
+}
+/* Active = literal [ ] brackets around the tag, not a filled pill — no
+   box at all is what actually reads as ASCII/terminal (a solid accent
+   background behind two letters just reads as a normal avatar badge). */
+html[data-nav-style="rail"][data-nav-text-style="tmux"] .icon-btns:not(.rail-open) .icon-btn.is-active,
+html[data-nav-style="rail"][data-nav-text-style="breadcrumb"] .icon-btns:not(.rail-open) .icon-btn.is-active{background:none !important}
+html[data-nav-style="rail"][data-nav-text-style="tmux"] .icon-btn.is-active .icon-btn__abbr,
+html[data-nav-style="rail"][data-nav-text-style="breadcrumb"] .icon-btn.is-active .icon-btn__abbr{color:var(--a);font-weight:700}
+html[data-nav-style="rail"][data-nav-text-style="tmux"] .icon-btns:not(.rail-open) .icon-btn.is-active .icon-btn__abbr::before,
+html[data-nav-style="rail"][data-nav-text-style="breadcrumb"] .icon-btns:not(.rail-open) .icon-btn.is-active .icon-btn__abbr::before{content:'[ ';position:absolute;left:1px;color:var(--a)}
+html[data-nav-style="rail"][data-nav-text-style="tmux"] .icon-btns:not(.rail-open) .icon-btn.is-active .icon-btn__abbr::after,
+html[data-nav-style="rail"][data-nav-text-style="breadcrumb"] .icon-btns:not(.rail-open) .icon-btn.is-active .icon-btn__abbr::after{content:' ]';position:absolute;right:1px;color:var(--a)}
 html[data-nav-style="rail"] .c-flipper .icon-btn__front::after{inset:2px;transform:none}
 html[data-nav-style="rail"] .dock-toggle{display:none}
 html[data-nav-style="rail"] .panel{
@@ -556,6 +1751,31 @@ html.desktop-transparent .icon-btns{
 html.desktop-transparent[data-transparent-level="heavy"] .icon-btns{
   background:rgba(0,0,0,var(--transparent-opacity-heavy,.05)) !important;
 }
+/* The WiFi Cracker stdout log (.wc-term/.wc-term-body) has its own
+   hardcoded flat rgba(0,0,0,.15) tint and NEVER had a backdrop-filter at
+   all (confirmed via inspector: "backdrop-filter: none") — under
+   desktop-transparent, with the shader hidden and 15% opacity being
+   barely-there, that's the real desktop showing through completely
+   sharp/unblurred behind the log text. This is the specific element the
+   "more blurred" ask was about, not .panel generally. */
+html.desktop-transparent .wc-term,
+html.desktop-transparent .wc-term-body{
+  backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);
+}
+/* Material's own M3 "filled card" pass (way up top, html[data-app-style=
+   "material"] .wc-sec/.wc-term/.flip-item{background:var(--m3-surface-
+   container)}) paints .wc-term fully OPAQUE, unconditionally — under
+   Material + desktop-transparent together that solid fill sits behind
+   .wc-term-body's own thin 15% black, so the blur above had nothing real
+   to blur: the "desktop" it was blurring was actually just the opaque M3
+   surface color, not the real desktop. Re-thin it back to the same
+   translucent tint the default theme uses whenever both are active. */
+html.desktop-transparent[data-app-style="material"] .wc-term{
+  background:rgba(0,0,0,var(--transparent-opacity-light,.4)) !important;
+}
+html.desktop-transparent[data-app-style="material"][data-transparent-level="heavy"] .wc-term{
+  background:rgba(0,0,0,var(--transparent-opacity-heavy,.05)) !important;
+}
 /* In heavy/Acrylic mode the panel's own overlay is only 5% black (kept
    thin on purpose so the live shader shows through) — during the normal
    .panel.leaving opacity fade, that already-thin overlay gets thinned
@@ -595,9 +1815,15 @@ html[data-nav-style="rail"].desktop-transparent .panel.leaving{transition:paddin
 .bg-swatch:active{transform:scale(.9)}
 .bg-swatch.active{border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.15),0 4px 14px -4px rgba(0,0,0,.6)}
 .bg-swatch-off{background:repeating-linear-gradient(45deg,#1a1a1a,#1a1a1a 4px,#0a0a0a 4px,#0a0a0a 8px)}
+.bg-swatch.bg-swatch-off{width:44px;height:44px}
+.app-style-card{transition:border-color .18s var(--ease-out),background .18s var(--ease-out)}
+.app-style-card:hover{border-color:var(--g-bd-h)}
+.app-style-card.is-active{border-color:rgba(92,214,255,.4)!important;background:color-mix(in srgb,var(--a) 6%,transparent)}
+.app-style-badge{color:var(--t3);border:1px solid var(--g-bd2)}
+.app-style-badge.on{color:var(--ok);border-color:rgba(52,230,160,.3);background:rgba(52,230,160,.08)}
 #loader-swatch-theme::after{content:'';position:absolute;top:50%;left:50%;width:11px;height:11px;
   border:1.5px solid rgba(255,255,255,.9);border-radius:3px;transform:translate(-50%,-50%) rotate(45deg);pointer-events:none}
-.bg-swatch-dual{width:30px;height:30px;background:var(--c2);overflow:hidden}
+.bg-swatch-dual{width:44px;height:44px;background:var(--c2);overflow:hidden}
 .bg-swatch-dual::before{content:'';position:absolute;inset:0;background:var(--c1);clip-path:polygon(0 0,100% 0,0 100%)}
 .theme-preset-label{font-size:10px;color:var(--t3);font-family:'JetBrains Mono',monospace;letter-spacing:.03em;margin:12px 0 6px}
 
@@ -1029,7 +2255,7 @@ select.setting-inp{cursor:pointer}
 .ur-drop-text span{color:var(--a)}
 .ur-preview{margin-top:14px;border-radius:var(--r2);overflow:hidden;border:1px solid var(--g-bd);background:rgba(0,0,0,.3);display:none;max-height:260px;text-align:center}
 .ur-preview img{max-width:100%;max-height:260px;object-fit:contain;display:block;margin:0 auto}
-.ur-sliders{margin-top:0;display:none;flex-direction:column;gap:10px;overflow:hidden;transition:max-height .35s cubic-bezier(.32,.72,0,1),opacity .25s}
+.ur-sliders{margin-top:0;display:none;flex-direction:column;gap:10px;padding-top:10px;overflow:hidden;transition:max-height .35s cubic-bezier(.32,.72,0,1),opacity .25s}
 .ur-sliders.open{display:flex}
 .ur-slider-row{display:flex;align-items:center;gap:12px}
 .ur-slider-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;color:rgba(92,214,255,.6);width:84px;flex-shrink:0}
@@ -1165,7 +2391,12 @@ input[type=range].ur-range:active::-moz-range-thumb{width:9px}
 .ur-preset-btn:hover{background:rgba(92,214,255,.07);border-color:rgba(92,214,255,.25);color:var(--t1);transform:translateY(-1px)}
 .ur-preset-btn.active{background:rgba(92,214,255,.12);border-color:rgba(92,214,255,.4);color:var(--a)}
 .ur-preset-btn.active small{color:rgba(92,214,255,.6);opacity:1}
-.ur-custom-sliders{margin-bottom:18px;padding:16px;border-radius:var(--r2);border:1px solid rgba(92,214,255,.15);background:rgba(92,214,255,.03);animation:fadeUp .25s cubic-bezier(.23,1,.32,1)}
+/* padding-top is taller than the other sides on purpose: .tool-card (the
+   ancestor) clips overflow for its own rounded corners, and the first
+   slider's .m3-value bubble floats bottom:calc(100% + 8px) above its own
+   row — with a flat 16px this bubble's top half got clipped by the card
+   whenever that first slider's value put the bubble near the top edge. */
+.ur-custom-sliders{margin-bottom:18px;padding:32px 16px 16px;border-radius:var(--r2);border:1px solid rgba(92,214,255,.15);background:rgba(92,214,255,.03);animation:fadeUp .25s cubic-bezier(.23,1,.32,1)}
 .ur-result{margin-top:20px;display:none}
 .ur-result.show{display:block;animation:fadeUp .35s cubic-bezier(.23,1,.32,1)}
 .ur-compare{position:relative;border-radius:var(--r2);overflow:hidden;user-select:none;touch-action:none;border:1px solid var(--g-bd);background:var(--g-bg);line-height:0}
@@ -1211,6 +2442,10 @@ input[type=range].ur-range:active::-moz-range-thumb{width:9px}
 .flip-empty-icon{width:52px;height:52px;border-radius:var(--r);background:var(--g-bg);border:1px solid var(--g-bd);display:flex;align-items:center;justify-content:center;color:var(--a);opacity:.7}
 .flip-empty-txt{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;text-align:center;line-height:1.8;color:var(--t3)}
 .flip-empty-hint{display:inline-flex;align-items:center;gap:8px;padding:7px 18px;border-radius:100px;background:var(--g-bg);border:1px solid var(--g-bd);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;color:rgba(92,214,255,.7);text-transform:uppercase}
+html[data-app-style="material"] .flip-empty-hint{
+  font-family:inherit;text-transform:none;letter-spacing:normal;font-size:13px;
+  color:var(--m3-on-surface-variant);background:var(--m3-surface-container-high);border-color:var(--m3-outline-variant);
+}
 .flip-empty-hint::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--a);animation:pulse 2.5s ease-in-out infinite}
 .flip-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:7px}
 .flip-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:var(--r2);border:1px solid var(--g-bd);background:var(--g-bg);transition:border-color .2s var(--ease-out),background .2s var(--ease-out),transform .2s var(--ease-out);position:relative}
@@ -1324,6 +2559,21 @@ input[type=range].ur-range:active::-moz-range-thumb{width:9px}
 .wc-hdr-sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(255,255,255,.45);letter-spacing:.05em}
 .wc-hdr-r{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.5);font-family:'JetBrains Mono',monospace}
 .wc-status-dot{width:7px;height:7px;border-radius:50%;background:var(--t3);transition:all .3s}
+/* GPU temp during an active crack — read straight off hashcat's own
+   --status Temp.# lines (it already hwmon-monitors by default, no extra
+   dependency), unlike a general always-on system monitor which would need
+   LibreHardwareMonitor + admin rights on Windows (psutil.sensors_temperatures()
+   returns nothing there). Only meaningful while hashcat is actually running,
+   so it's hidden the rest of the time instead of showing a stale number. */
+.wc-hdr-temp{padding:2px 7px;border-radius:var(--r2);background:rgba(255,255,255,.06);letter-spacing:.02em}
+.wc-hdr-temp.warn{color:#f5a623;background:rgba(245,166,35,.12)}
+.wc-hdr-temp.hot{color:#ff5c5c;background:rgba(255,92,92,.14)}
+html[data-app-style="material"] .wc-hdr-temp{
+  background:color-mix(in srgb,var(--m3-on-surface) 8%,transparent);
+  color:var(--m3-on-surface-variant);
+}
+html[data-app-style="material"] .wc-hdr-temp.warn{color:#f5a623;background:color-mix(in srgb,#f5a623 14%,transparent)}
+html[data-app-style="material"] .wc-hdr-temp.hot{color:#ff5c5c;background:color-mix(in srgb,#ff5c5c 16%,transparent)}
 .wc-status-dot.ok{background:var(--a)}
 .wc-status-dot.err{background:var(--wc-red)}
 .wc-status-dot.run{background:var(--a);animation:pulse 1s ease-in-out infinite}
@@ -1362,19 +2612,35 @@ input[type=range].ur-range:active::-moz-range-thumb{width:9px}
 .wc-rv.v{color:var(--t1);font-weight:500}
 .wc-rv.ok{color:var(--a)}
 .wc-rv.er{color:var(--wc-red)}
-.wc-pb{height:6px;background:rgba(255,255,255,.06);overflow:hidden;margin-top:6px;border-radius:var(--r2)}
-.wc-pf{height:100%;width:0%;background:linear-gradient(90deg,#5cd6ff,#8fe3ff);transition:width .5s var(--ease-out);border-radius:var(--r2)}
+/* Was permanently visible as a flat empty 6px line before any analysis
+   ever ran — real EAPOL-progress bar (see wcDoA's fetch handler), but with
+   nothing to show yet it just reads as stray debris. Hidden until an
+   analysis actually produces a width; wcDoA shows it, rA() (new-file
+   reset) hides it again. */
+.wc-pb{height:6px;background:rgba(255,255,255,.06);overflow:hidden;margin-top:6px;border-radius:var(--r2);display:none}
+.wc-pf{height:100%;width:0%;background:linear-gradient(90deg,var(--a),var(--a2));transition:width .5s var(--ease-out);border-radius:var(--r2)}
 .wc-ph{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(255,255,255,.48);margin-top:4px}
 .wc-ph.ok{color:var(--a)}
 .wc-ph.er{color:var(--wc-red)}
-.wc-lite{display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:rgba(255,255,255,.6);cursor:pointer;margin-bottom:10px;user-select:none}
-/* #wc-lite (id), not .wc-lite input (class+type) — a later global reset rule
-   (input:not([type="range"]), select{width:100%}) ties that class+type
-   selector on specificity and wins on source order, stretching the checkbox
-   to the label's full width and forcing its sibling text to wrap into a
-   near-zero-width column, one letter per line. */
-#wc-lite{width:13px;height:13px;accent-color:var(--a);cursor:pointer;flex-shrink:0}
-.wc-lite:hover{color:rgba(255,255,255,.85)}
+.wc-set-btn{width:22px;height:22px;flex-shrink:0;border-radius:6px;display:flex;align-items:center;justify-content:center;background:var(--g-bg);border:1px solid var(--g-bd);color:var(--t3);cursor:pointer;padding:0;position:relative;transition:background .18s var(--ease-out),border-color .18s var(--ease-out),color .18s var(--ease-out)}
+.wc-set-btn svg{width:13px;height:13px}
+.wc-set-btn:hover{color:var(--t1)}
+.wc-set-modal{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;background:rgba(2,10,16,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.wc-set-modal.show{display:flex}
+/* Was background:var(--g-bg2,var(--bg)) — --g-bg2 was never actually
+   declared anywhere in THIS document, only in frontend/index.html (the
+   OSINT sub-app), whose <style> block gets injected into <head> at runtime
+   by loadOsintPanel() and leaks its own :root vars onto the whole page.
+   That gave this modal a near-transparent rgba(255,255,255,.05) fill
+   instead of falling back to the intended solid --bg, letting the WiFi
+   Cracker panel behind it bleed through and wreck text legibility. --bg is
+   this app's own var (never supplied by the leak), so it can't happen here. */
+.wc-set-modal-card{width:420px;max-width:92vw;max-height:80vh;overflow:auto;border-radius:var(--r);background:var(--bg);border:1px solid var(--g-bd2);box-shadow:0 24px 64px -12px rgba(0,0,0,.6);animation:fadeUp .25s cubic-bezier(.23,1,.32,1)}
+.wc-set-modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--g-bd2);font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--t1);font-weight:700}
+.wc-set-modal-x{width:26px;height:26px;flex-shrink:0;border-radius:7px;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid var(--g-bd);color:var(--t3);cursor:pointer;padding:0}
+.wc-set-modal-x svg{width:14px;height:14px}
+.wc-set-modal-x:hover{color:var(--t1);border-color:var(--g-bd-h)}
+.wc-set-modal-body{padding:18px}
 .wc-btn{width:100%;padding:11px 12px;border-radius:var(--r2);border:1px solid var(--g-bd2);font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:600;letter-spacing:.02em;cursor:pointer;background:var(--g-bg);color:var(--t2);position:relative;overflow:hidden;transition:color .15s,border-color .15s,background .15s,transform .15s}
 .wc-btn:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)}
 .wc-btn:active{transform:scale(.97);transition:transform 100ms var(--ease-out)}
@@ -1444,6 +2710,84 @@ input[type=range].ur-range:active::-moz-range-thumb{width:9px}
 }
 .wc-prog-wave{width:100%;height:26px;display:block}
 .wc-prog-pct{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--t1)}
+/* style-inline-pct: radial/hex carry their own percent readout baked into
+   the widget itself, so the separate .wc-prog-pct row (and the pill-shaped
+   blur sized for a thin horizontal bar) would either duplicate the number
+   or look like a mismatched shape behind a circle/text block. */
+.wc-prog-overlay.style-inline-pct .wc-prog-pct{display:none}
+.wc-prog-overlay.style-inline-pct .wc-prog-bar::before{display:none}
+.wc-glitch-bar{width:100%;height:12px;border-radius:2px;background:rgba(255,255,255,.06);position:relative;overflow:hidden}
+.wc-glitch-fill{position:absolute;inset:0;width:0%;background:var(--a)}
+.wc-glitch-scan{position:absolute;top:0;bottom:0;left:0;width:6px;background:var(--a2);mix-blend-mode:screen;animation:wcGlitch 2.4s steps(1) infinite}
+@keyframes wcGlitch{
+  0%,88%{opacity:0;transform:translateX(0)}
+  90%{opacity:1;transform:translateX(-4px)}
+  92%{opacity:1;transform:translateX(3px)}
+  94%{opacity:0;transform:translateX(0)}
+  100%{opacity:0}
+}
+.wc-radial{position:relative;width:104px;height:104px;margin:0 auto}
+.wc-radial svg{width:104px;height:104px}
+.wc-radial-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:17px;color:var(--t1)}
+.wc-hex{font-family:'JetBrains Mono',monospace;text-align:center;line-height:2}
+/* Live preview in Settings, right under the style picker — renders the
+   exact same real-size markup as the crack overlay (see _wcStyleHTML/
+   _wcTickStyle), so what you see here never drifts from a real crack.
+   Was a grid of 4 separately bordered/filled cells, one per style, all
+   ticking at once — every OTHER preview in Settings (loader, slider
+   style, background) shows exactly the ONE currently-selected option
+   instead, swapped live by _wcRenderCrackPreview() when the segmented
+   buttons above change. Matches that pattern: one shared box, one thing
+   in it. */
+/* Base box dropped out in an earlier edit (a since-corrected old_string/
+   new_string overlap swallowed it along with the rules it preceded) —
+   .wc-crack-preview rendered with zero layout/background/border for a
+   while, invisible regression until caught. Sized to match
+   .loader-preview-wrap exactly now that it also sits inside a
+   .preview-block (margin-top dropped — .preview-block-head's own
+   margin-bottom handles that spacing, same as every other preview). */
+.wc-crack-preview{display:flex;align-items:center;justify-content:center;padding:14px 18px;min-height:64px;border-radius:var(--r2);background:rgba(255,255,255,.03);border:1px solid var(--g-bd2)}
+/* No .wc-preview-box wrapper anymore — _wcRenderCrackPreview() injects
+   _wcStyleHTML's markup directly into .wc-crack-preview, so these target
+   its direct children instead. */
+.wc-crack-preview>*{transform:scale(.9);transform-origin:center;flex-shrink:0}
+/* .wc-radial is a fixed 104x104 box — bigger than the others even at .9,
+   so it gets its own smaller scale to stay clear of the box edges. */
+.wc-crack-preview>.wc-radial{transform:scale(.72)}
+.wc-hex-label{font-size:11px;letter-spacing:.1em;color:var(--t3)}
+.wc-hex-row{font-size:13px;color:var(--a)}
+.wc-hex-dim{color:var(--t3)}
+.wc-hex-pct{font-size:20px;font-weight:700;color:var(--t1);margin-top:2px}
+/* Fixed padding/gap values fit fine at typical window heights but
+   overflow (forcing .wc-side to scroll) at shorter ones — no single
+   static number is safe for every real window size, so scale down
+   instead of guessing one. Same responsive-height pattern already used
+   for the OSINT hero panel (frontend/index.html's own
+   @media(max-height:750/650px) blocks). Covers both the default theme's
+   own compact values and material's roomier ones (which need !important
+   to win — those are set inline-cascade-equal html[data-app-style=...]
+   selectors elsewhere, not overridable by a later plain media query at
+   the same specificity otherwise). */
+@media (max-height:820px){
+  .wc-side{gap:6px}
+  .wc-sec-h{padding:7px 14px}
+  .wc-sec-b{padding:9px 14px;gap:6px}
+  .wc-row{padding:2px 0}
+  .wc-dz{padding:9px 14px}
+  html[data-app-style="material"] .wc-sec-h{padding:10px 16px!important;font-size:11px!important}
+  html[data-app-style="material"] .wc-sec-b{padding:11px 16px!important;gap:8px!important}
+  html[data-app-style="material"] .wc-row{padding:5px 0!important}
+}
+@media (max-height:680px){
+  .wc-side{gap:4px}
+  .wc-sec-h{padding:5px 12px;font-size:8px}
+  .wc-sec-b{padding:7px 12px;gap:4px}
+  .wc-row{padding:1px 0}
+  .wc-dz{padding:6px 12px}
+  html[data-app-style="material"] .wc-sec-h{padding:8px 14px!important;font-size:10px!important}
+  html[data-app-style="material"] .wc-sec-b{padding:8px 14px!important;gap:6px!important}
+  html[data-app-style="material"] .wc-row{padding:3px 0!important}
+}
 .wc-term{display:flex;flex-direction:column;min-height:0;position:relative;overflow:hidden;background:var(--g-bg);border:1px solid var(--g-bd);border-radius:var(--r)}
 .wc-term-hdr{height:44px;display:flex;align-items:center;padding:0 18px;gap:10px;flex-shrink:0;border-bottom:1px solid var(--g-bd)}
 .wc-term-title{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;color:rgba(255,255,255,.42);flex:1;text-transform:uppercase}
@@ -2249,7 +3593,13 @@ void main(){
     dither: {shader:'dither', extras:false, glass:false, opacity:0.85, speed:0.4, frequency:2.4, amplitude:0.32, colorNum:4, pixelSize:3, mouseRadius:0.9, mouse:true},
     beams:  {shader:'beams', extras:false, glass:false, opacity:0.8, speed:0.5, noiseIntensity:1.4, beamCount:12, beamWidth:0.5, rotation:0.15},
     rays:   {shader:'rays', extras:false, glass:false, opacity:0.9, speed:1.2, spread:2.6, rayLength:2.2, pulsating:1, fadeDistance:1.1, saturation:1.3, noiseAmount:0.06, distortion:0.15, mouse:true, origin:'top-center'},
-    off:    {shader:'wave',  amp:0, blend:0.5, extras:false, glass:false}
+    off:    {shader:'wave',  amp:0, blend:0.5, extras:false, glass:false},
+    // Genuinely flat/simple backgrounds — a fixed color, no shader, no tie
+    // to the current accent — the "real Android app" look asked for, as
+    // opposed to Off (which still inherits whatever --bg the active App
+    // Theme happens to be set to).
+    slate:  {shader:'wave',  amp:0, blend:0.5, extras:false, glass:false, flatBg:'#121212'},
+    paper:  {shader:'wave',  amp:0, blend:0.5, extras:false, glass:false, flatBg:'#F5F5F5'}
   };
 
   function hexToHsl(hex){
@@ -2444,6 +3794,27 @@ void main(){
     var orbs = document.querySelector('.bg-orbs'), scan = document.querySelector('.scanline');
     if(orbs) orbs.style.display = p.extras ? '' : 'none';
     if(scan) scan.style.display = p.extras ? '' : 'none';
+
+    // Flat/solid presets (Slate, Paper) — a plain fixed background-color
+    // layer, not another shader config. Deliberately NOT done by touching
+    // --bg directly: --bg is already owned by the App Theme system
+    // (applyAppTheme/resetAppTheme set it inline), and overwriting it here
+    // would either get clobbered right back by the next theme change or
+    // require tracking a "previous --bg" to restore on preset switch. A
+    // separate overlay div sidesteps that ownership fight entirely.
+    var flatEl = document.getElementById('bgFlatOverlay');
+    if(!flatEl){
+      flatEl = document.createElement('div');
+      flatEl.id = 'bgFlatOverlay';
+      flatEl.style.cssText = 'position:fixed;inset:0;z-index:0;pointer-events:none;display:none';
+      document.body.insertBefore(flatEl, document.body.firstChild);
+    }
+    if(p.flatBg){
+      flatEl.style.background = p.flatBg;
+      flatEl.style.display = '';
+    } else {
+      flatEl.style.display = 'none';
+    }
 
     // liquid-glass used to auto-toggle per preset (aurora:false, ferro/waves:
     // true) — meant the panel/card CHROME itself visibly changed just from
@@ -2764,13 +4135,29 @@ document.addEventListener("pointermove",(e)=>{
       <div class="wc-hdr-sep"></div>
       <span class="wc-hdr-sub">pcap &rarr; hc22000 &rarr; hashcat</span>
       <div class="wc-hdr-r">
+        <span class="wc-hdr-temp" id="wc-hdr-temp" style="display:none"></span>
         <div class="wc-status-dot" id="wc-sdot"></div>
+        <span class="tool-spinner" id="wc-spinner" data-size="14" style="width:14px;height:14px;display:none"></span>
         <span id="wc-stxt">idle</span>
+        <button class="wc-set-btn" id="wc-set-btn" title="WiFi Cracker settings" onclick="openWcSettingsModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
       </div>
     </header>
+    <div class="wc-set-modal" id="wc-set-modal">
+      <div class="wc-set-modal-card">
+        <div class="wc-set-modal-head">
+          <span>WiFi Cracker settings</span>
+          <button class="wc-set-modal-x" id="wc-set-modal-x" title="Close" onclick="closeWcSettingsModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="wc-set-modal-body" id="wc-set-modal-body"></div>
+      </div>
+    </div>
     <div class="wc-body">
       <div class="wc-side">
-        <div class="wc-sec">
+        <div class="wc-sec wc-sec-deps">
           <div class="wc-sec-h">dependencies</div>
           <div class="wc-sec-b">
             <div class="wc-pills">
@@ -2781,7 +4168,7 @@ document.addEventListener("pointermove",(e)=>{
             </div>
           </div>
         </div>
-        <div class="wc-sec">
+        <div class="wc-sec wc-sec-target">
           <div class="wc-sec-h">target</div>
           <div class="wc-sec-b">
             <div class="wc-dz" id="wc-dz" onclick="wcPick()">
@@ -2795,7 +4182,7 @@ document.addEventListener("pointermove",(e)=>{
             </div>
           </div>
         </div>
-        <div class="wc-sec">
+        <div class="wc-sec wc-sec-analysis">
           <div class="wc-sec-h">analysis</div>
           <div class="wc-sec-b">
             <div class="wc-rows">
@@ -2809,13 +4196,21 @@ document.addEventListener("pointermove",(e)=>{
             <div class="wc-ph" id="wc-ph">min 2 EAPOL required</div>
           </div>
         </div>
-        <div class="wc-sec">
+        <div class="wc-sec wc-sec-perf">
+          <div class="wc-sec-h">performance</div>
+          <div class="wc-sec-b">
+            <div class="wc-rows">
+              <div class="wc-row"><div class="wc-rk">speed</div>     <div class="wc-rv" id="wc-v-speed">&#x2014;</div></div>
+              <div class="wc-row"><div class="wc-rk">progress</div>  <div class="wc-rv" id="wc-v-prog">&#x2014;</div></div>
+              <div class="wc-row"><div class="wc-rk">recovered</div> <div class="wc-rv" id="wc-v-rec">&#x2014;</div></div>
+              <div class="wc-row"><div class="wc-rk">eta</div>       <div class="wc-rv" id="wc-v-eta">&#x2014;</div></div>
+              <div class="wc-row"><div class="wc-rk">wordlist</div>  <div class="wc-rv" id="wc-v-wl">&#x2014;</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="wc-sec wc-sec-actions">
           <div class="wc-sec-h">actions</div>
           <div class="wc-sec-b">
-            <label class="wc-lite" for="wc-lite" title="Caps hashcat's workload profile at Low (-w 1) instead of the default — slower cracking, but leaves the GPU/CPU usable for everything else instead of pegging them at 100%.">
-              <input type="checkbox" id="wc-lite" onchange="wcOnLite(this.checked)">
-              <span>Lite mode — lower GPU/CPU load, slower crack</span>
-            </label>
             <button class="wc-btn" id="wc-bta" onclick="wcDoA()"><span>analyze pcap</span></button>
             <button class="wc-btn go" id="wc-btc" onclick="wcDoC()" disabled><span>run hashcat</span></button>
             <button class="wc-btn stop" id="wc-bts" onclick="wcDoS()" style="display:none"><span>terminate</span></button>
@@ -2834,7 +4229,7 @@ document.addEventListener("pointermove",(e)=>{
         <div class="wc-term-body" id="wc-tb"></div>
         <div class="wc-prog-overlay" id="wc-prog-overlay">
           <div class="wc-prog-wl" id="wc-prog-wl">starting…</div>
-          <div class="wc-prog-bar"><svg class="wc-prog-wave" id="wc-prog-wave" viewBox="0 0 200 26"></svg></div>
+          <div class="wc-prog-bar" id="wc-prog-bar"><svg class="wc-prog-wave" id="wc-prog-wave" viewBox="0 0 200 26"></svg></div>
           <div class="wc-prog-pct" id="wc-prog-pct">0%</div>
         </div>
         <div class="wc-pw-overlay" id="wc-pw-overlay" onclick="this.classList.remove('show')">
@@ -2855,14 +4250,149 @@ document.addEventListener("pointermove",(e)=>{
 // (P, H2, LI, poll, st, sv, pick, clr…) that were fine in their own
 // standalone document but would collide with half this file's own globals
 // once inlined here. Only the 6 functions HTML onclick/oninput attributes
-// above actually call (wcPick, wcOnP, wcDoA, wcDoC, wcDoS, wcClr, wcOnLite)
+// above actually call (wcPick, wcOnP, wcDoA, wcDoC, wcDoS, wcClr, wcSetWorkload)
 // plus wcChk (called from sw() when the WiFi Cracker tab opens, see the
 // panel switcher) are exposed on window; everything else stays private.
 (function(){
-  var P='', H2='', LI=0, poll=null, pwShown=false, progPct=0, waveAttached=false;
-  var liteEl = document.getElementById('wc-lite');
-  liteEl.checked = localStorage.getItem('kiki_wc_lite') === '1';
-  function wcOnLite(on){ localStorage.setItem('kiki_wc_lite', on ? '1' : '0'); }
+  var P='', H2='', LI=0, poll=null, pwShown=false, progPct=0, wcTemps={};
+  var wcStyleMounted=null, wcStyleToken=0;
+  function wcSetWorkload(val){
+    localStorage.setItem('kiki_wc_workload', String(val));
+    markActive('s-wc-workload', String(val));
+  }
+  function wcSetCrackStyle(val){
+    localStorage.setItem('kiki_wc_crack_style', val);
+    markActive('s-wc-crack-style', val);
+    wcApplyCrackStyle();
+    if(window._wcRenderCrackPreview) window._wcRenderCrackPreview();
+  }
+  // The crack overlay's bar/gauge is swappable per-style, unlike the shared
+  // attachWaveBar() bars used everywhere else — 'default' just delegates to
+  // that shared component (inheriting whatever the global Loading Indicator
+  // is set to), the other three are WiFi-Cracker-only visuals with no
+  // equivalent anywhere else in the app. wcStyleToken invalidates whichever
+  // rAF loop was running for the previous style so switching mid-crack
+  // doesn't leave two loops fighting over the same DOM.
+  function wcApplyCrackStyle(){
+    var style = localStorage.getItem('kiki_wc_crack_style') || 'default';
+    if(style === wcStyleMounted) return;
+    wcStyleMounted = style;
+    wcStyleToken++;
+    var myToken = wcStyleToken;
+    var bar = document.getElementById('wc-prog-bar');
+    var overlay = document.getElementById('wc-prog-overlay');
+    if(!bar || !overlay) return;
+    overlay.classList.toggle('style-inline-pct', style === 'radial' || style === 'hex');
+    if(style === 'glitch'){
+      bar.innerHTML = '<div class="wc-glitch-bar"><div class="wc-glitch-fill" id="wc-glitch-fill"></div><div class="wc-glitch-scan" id="wc-glitch-scan"></div></div>';
+      (function loop(){
+        if(myToken !== wcStyleToken) return;
+        var p = progPct / 100;
+        document.getElementById('wc-glitch-fill').style.width = (p*100) + '%';
+        document.getElementById('wc-glitch-scan').style.left = 'calc(' + (p*100) + '% - 3px)';
+        requestAnimationFrame(loop);
+      })();
+    } else if(style === 'radial'){
+      bar.innerHTML = '<div class="wc-radial"><svg viewBox="0 0 104 104"><path fill="none" stroke="rgba(255,255,255,.1)" stroke-width="7" stroke-linecap="round" id="wc-radial-track"/><path id="wc-radial-fill" fill="none" stroke="var(--a)" stroke-width="7" stroke-linecap="round"/></svg><span class="wc-radial-pct" id="wc-radial-pct">0%</span></div>';
+      var cx=52, cy=52, r=44, gapDeg=126, trackStart=90+gapDeg/2, trackSweep=360-gapDeg;
+      function polar(deg){ var rad=deg*Math.PI/180; return {x:cx+r*Math.cos(rad), y:cy+r*Math.sin(rad)}; }
+      var s = polar(trackStart), e = polar(trackStart+trackSweep);
+      document.getElementById('wc-radial-track').setAttribute('d', 'M'+s.x.toFixed(2)+' '+s.y.toFixed(2)+' A'+r+' '+r+' 0 1 1 '+e.x.toFixed(2)+' '+e.y.toFixed(2));
+      (function loop(){
+        if(myToken !== wcStyleToken) return;
+        var p = progPct / 100;
+        var fillSweep = trackSweep*p, fe = polar(trackStart+fillSweep);
+        var largeArc = (fillSweep>180) ? 1 : 0;
+        document.getElementById('wc-radial-fill').setAttribute('d', 'M'+s.x.toFixed(2)+' '+s.y.toFixed(2)+' A'+r+' '+r+' 0 '+largeArc+' 1 '+fe.x.toFixed(2)+' '+fe.y.toFixed(2));
+        document.getElementById('wc-radial-pct').textContent = progPct.toFixed(1) + '%';
+        requestAnimationFrame(loop);
+      })();
+    } else if(style === 'hex'){
+      bar.innerHTML = '<div class="wc-hex"><div class="wc-hex-label">CANDIDATES</div><div class="wc-hex-row" id="wc-hex-val"></div><div class="wc-hex-pct" id="wc-hex-pct">0%</div></div>';
+      (function loop(){
+        if(myToken !== wcStyleToken) return;
+        var p = progPct / 100;
+        var num = Math.floor(p * 0xDB6A00);
+        document.getElementById('wc-hex-val').innerHTML = '0x' + num.toString(16).toUpperCase().padStart(8,'0') + ' <span class="wc-hex-dim">/ 0x00DB6A00</span>';
+        document.getElementById('wc-hex-pct').textContent = progPct.toFixed(1) + '%';
+        requestAnimationFrame(loop);
+      })();
+    } else {
+      bar.innerHTML = '<svg class="wc-prog-wave" id="wc-prog-wave" viewBox="0 0 200 26"></svg>';
+      if(window.attachWaveBar) window.attachWaveBar('wc-prog-wave', {progress: function(){ return progPct / 100; }, amp: 5, strokeWidth: 3});
+    }
+  }
+
+  // Live mini-preview of each crack-progress style in Settings — reuses the
+  // exact same markup/update logic as the real overlay (just parameterized
+  // by an id prefix instead of hardcoded wc-prog-* ids) so the preview is
+  // never at risk of drifting from what a real crack actually looks like.
+  function _wcStyleHTML(style, id){
+    if(style === 'glitch') return '<div class="wc-glitch-bar"><div class="wc-glitch-fill" id="'+id+'-fill"></div><div class="wc-glitch-scan" id="'+id+'-scan"></div></div>';
+    if(style === 'radial') return '<div class="wc-radial"><svg viewBox="0 0 104 104"><path fill="none" stroke="rgba(255,255,255,.1)" stroke-width="7" stroke-linecap="round" id="'+id+'-track"/><path id="'+id+'-fill" fill="none" stroke="var(--a)" stroke-width="7" stroke-linecap="round"/></svg><span class="wc-radial-pct" id="'+id+'-pct">0%</span></div>';
+    if(style === 'hex') return '<div class="wc-hex"><div class="wc-hex-label">CANDIDATES</div><div class="wc-hex-row" id="'+id+'-val"></div><div class="wc-hex-pct" id="'+id+'-pct">0%</div></div>';
+    return '<svg class="wc-prog-wave" id="'+id+'-wave" viewBox="0 0 200 26"></svg>';
+  }
+  function _wcTickStyle(style, id, pct){
+    var p = pct / 100;
+    if(style === 'glitch'){
+      var f = document.getElementById(id+'-fill'), s = document.getElementById(id+'-scan');
+      if(f) f.style.width = (p*100) + '%';
+      if(s) s.style.left = 'calc(' + (p*100) + '% - 3px)';
+    } else if(style === 'radial'){
+      var track = document.getElementById(id+'-track'), fillEl = document.getElementById(id+'-fill'), pctEl = document.getElementById(id+'-pct');
+      if(!track || !fillEl) return;
+      var cx=52, cy=52, r=44, gapDeg=126, trackStart=90+gapDeg/2, trackSweep=360-gapDeg;
+      function polar(deg){ var rad=deg*Math.PI/180; return {x:cx+r*Math.cos(rad), y:cy+r*Math.sin(rad)}; }
+      var sP = polar(trackStart), eP = polar(trackStart+trackSweep);
+      if(!track.getAttribute('d')) track.setAttribute('d', 'M'+sP.x.toFixed(2)+' '+sP.y.toFixed(2)+' A'+r+' '+r+' 0 1 1 '+eP.x.toFixed(2)+' '+eP.y.toFixed(2));
+      var fillSweep = trackSweep*p, fe = polar(trackStart+fillSweep), largeArc = (fillSweep>180) ? 1 : 0;
+      fillEl.setAttribute('d', 'M'+sP.x.toFixed(2)+' '+sP.y.toFixed(2)+' A'+r+' '+r+' 0 '+largeArc+' 1 '+fe.x.toFixed(2)+' '+fe.y.toFixed(2));
+      if(pctEl) pctEl.textContent = pct.toFixed(0) + '%';
+    } else if(style === 'hex'){
+      var val = document.getElementById(id+'-val'), pctEl2 = document.getElementById(id+'-pct');
+      if(!val) return;
+      var num = Math.floor(p * 0xDB6A00);
+      val.innerHTML = '0x' + num.toString(16).toUpperCase().padStart(8,'0') + ' <span class="wc-hex-dim">/ 0x00DB6A00</span>';
+      if(pctEl2) pctEl2.textContent = pct.toFixed(0) + '%';
+    }
+  }
+  // Every OTHER preview in Settings (loader, slider style) shows exactly
+  // ONE live example — the currently selected style — not all options
+  // rendered side by side (the segmented buttons above already list the
+  // options; showing all four here was redundant with them). Mirrors that:
+  // one mounted preview, re-rendered whenever wcSetCrackStyle() runs.
+  var _wcPreviewPct = 0, _wcPreviewRunning = false;
+  function _wcPreviewLoop(){
+    var wrap = document.getElementById('s-wc-crack-preview');
+    if(!wrap) { _wcPreviewRunning = false; return; }
+    // Was a 1400ms half-period (2.8s full 0->100->0 sweep) — read as
+    // "0 to 100 in ~2 seconds", too fast to actually look at. 5x slower.
+    var t = (Date.now() / 7000) % 2;
+    _wcPreviewPct = t <= 1 ? t*100 : (2-t)*100; // triangle wave, 0 -> 100 -> 0
+    var style = wrap.dataset.style || 'default';
+    if(style !== 'default') _wcTickStyle(style, 'wcprev', _wcPreviewPct);
+    requestAnimationFrame(_wcPreviewLoop);
+  }
+  function _wcRenderCrackPreview(){
+    var wrap = document.getElementById('s-wc-crack-preview');
+    if(!wrap) return;
+    var style = localStorage.getItem('kiki_wc_crack_style') || 'default';
+    wrap.dataset.style = style;
+    wrap.innerHTML = _wcStyleHTML(style, 'wcprev');
+    if(style === 'default' && window.attachWaveBar){
+      window.attachWaveBar('wcprev-wave', {progress: function(){ return _wcPreviewPct/100; }, amp: 4, strokeWidth: 2});
+    }
+  }
+  function _wcInitCrackPreviews(){
+    var wrap = document.getElementById('s-wc-crack-preview');
+    if(!wrap || wrap.dataset.built) return;
+    wrap.dataset.built = '1';
+    _wcRenderCrackPreview();
+    if(!_wcPreviewRunning){ _wcPreviewRunning = true; requestAnimationFrame(_wcPreviewLoop); }
+  }
+  window.wcInitCrackPreviews = _wcInitCrackPreviews;
+  window._wcRenderCrackPreview = _wcRenderCrackPreview;
 
   function showPwFound(pw){
     if(pwShown) return; pwShown = true;
@@ -2871,9 +4401,19 @@ document.addEventListener("pointermove",(e)=>{
   }
   function st(t, c){
     var d = document.getElementById('wc-sdot'), s = document.getElementById('wc-stxt');
+    var spin = document.getElementById('wc-spinner');
     d.className = 'wc-status-dot ' + (c || '');
     s.textContent = t;
     s.style.color = c==='ok' ? 'var(--a)' : c==='err' ? 'var(--wc-red)' : c==='run' ? 'var(--a)' : 'var(--t3)';
+    // Plain dot for every idle/ok/err state — the real M3 morph-blob
+    // spinner (m3InitSpinners()/.tool-spinner, same one used everywhere
+    // else something's actively loading in this app) only while a crack
+    // or analysis is genuinely in flight. Swap visibility, not existence —
+    // m3InitSpinners() only scans for NEW .tool-spinner elements once at
+    // page load, so this one is already built and running its rAF loop in
+    // the background the whole time, just hidden until needed.
+    if(spin){ d.style.display = c==='run' ? 'none' : ''; spin.style.display = c==='run' ? 'inline-block' : 'none'; }
+    if(window.setProcRunning) window.setProcRunning('hc', c === 'run');
   }
 
   var dz = document.getElementById('wc-dz');
@@ -2920,8 +4460,15 @@ document.addEventListener("pointermove",(e)=>{
     });
     document.getElementById('wc-pf').style.width = '0%';
     document.getElementById('wc-pb').className = 'wc-pb';
+    document.getElementById('wc-pb').style.display = 'none';
     document.getElementById('wc-ph').textContent = 'min 2 EAPOL required';
     document.getElementById('wc-ph').className = 'wc-ph';
+    ['wc-v-speed','wc-v-prog','wc-v-rec','wc-v-eta','wc-v-wl'].forEach(function(id){
+      var e = document.getElementById(id);
+      if(e){ e.textContent = '—'; e.className = 'wc-rv'; }
+    });
+    wcTemps = {};
+    document.getElementById('wc-hdr-temp').style.display = 'none';
     document.getElementById('wc-res').classList.remove('show');
     document.getElementById('wc-btc').disabled = true;
     H2 = '';
@@ -2939,12 +4486,35 @@ document.addEventListener("pointermove",(e)=>{
     // the letter-by-letter typewriter reveal below — a live percentage that
     // lags a full tick animation behind reads as broken, not stylish.
     var mWl = msg.match(/^trying:\s*(.+)/);
-    if(mWl) document.getElementById('wc-prog-wl').textContent = mWl[1];
-    var mPct = msg.match(/Progress\.+:\s*[\d,]+\/[\d,]+\s*\(([\d.]+)%\)/);
+    if(mWl){
+      document.getElementById('wc-prog-wl').textContent = mWl[1];
+      sv('wc-v-wl', mWl[1]);
+    }
+    var mPct = msg.match(/Progress\.+:\s*([\d,]+\/[\d,]+)\s*\(([\d.]+)%\)/);
     if(mPct){
-      var pct = parseFloat(mPct[1]);
+      var pct = parseFloat(mPct[2]);
       progPct = pct; // read live by attachWaveBar's own rAF loop, no DOM write needed here
       document.getElementById('wc-prog-pct').textContent = pct.toFixed(1) + '%';
+      sv('wc-v-prog', mPct[1] + ' (' + pct.toFixed(1) + '%)');
+    }
+    // Persistent perf-monitor rows — same hashcat --status lines, just kept
+    // alive in the card instead of only the transient overlay so the last
+    // run's numbers don't vanish the moment the overlay closes.
+    var mSpeed = msg.match(/^Speed\.#\d+\.+:\s*([\d.,]+\s*\S*H\/s)/);
+    if(mSpeed) sv('wc-v-speed', mSpeed[1].trim());
+    var mEta = msg.match(/^Time\.Estimated\.+:.*\(([^)]+)\)/);
+    if(mEta) sv('wc-v-eta', mEta[1]);
+    var mRec = msg.match(/^Recovered\.+:\s*(\d+\/\d+)/);
+    if(mRec) sv('wc-v-rec', mRec[1], mRec[1][0] !== '0' ? 'ok' : '');
+    var mTemp = msg.match(/^Temp\.#(\d+)\.+:\s*(\d+)c/i);
+    if(mTemp){
+      wcTemps[mTemp[1]] = parseInt(mTemp[2], 10);
+      var vals = Object.keys(wcTemps).map(function(k){ return wcTemps[k]; });
+      var maxT = Math.max.apply(null, vals);
+      var hdrT = document.getElementById('wc-hdr-temp');
+      hdrT.textContent = vals.length > 1 ? ('GPU ' + maxT + '°C (max)') : ('GPU ' + maxT + '°C');
+      hdrT.className = 'wc-hdr-temp' + (maxT >= 85 ? ' hot' : maxT >= 75 ? ' warn' : '');
+      hdrT.style.display = '';
     }
     var i = 0, txt = esc(msg);
     function tick(){
@@ -2999,6 +4569,7 @@ document.addEventListener("pointermove",(e)=>{
       if(!rd.running && poll){
         clearInterval(poll); poll = null;
         document.getElementById('wc-prog-overlay').classList.remove('show');
+        document.getElementById('wc-hdr-temp').style.display = 'none';
         // Without this, "ran and found nothing" and "haven't cracked yet"
         // looked identical — both just idle with both buttons available —
         // which read as the UI silently asking to analyze all over again.
@@ -3039,6 +4610,7 @@ document.addEventListener("pointermove",(e)=>{
       sv('wc-v-e', String(d.eapol), d.eapol>=2 ? 'ok' : 'er');
       if(d.hash_file){ H2 = d.hash_file; sv('wc-v-h', d.hash_file.split(/[\\/]/).pop(), 'v'); }
       document.getElementById('wc-pf').style.width = Math.min(d.eapol/4*100, 100) + '%';
+      document.getElementById('wc-pb').style.display = 'block';
       if(d.eapol >= 2){
         document.getElementById('wc-pb').className = 'wc-pb ok';
         document.getElementById('wc-ph').textContent = d.eapol + ' EAPOL — ready to crack';
@@ -3068,7 +4640,13 @@ document.addEventListener("pointermove",(e)=>{
     document.getElementById('wc-prog-wl').textContent = 'starting…';
     document.getElementById('wc-prog-overlay').classList.add('show');
     try{
-      var r = await fetch('/api/hc/crack', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({hash_file:H2, lite:liteEl.checked})});
+      // localStorage is the persisted source of truth the segmented
+      // buttons just mirror (see wcChk()/wcSetWorkload()) — reading it
+      // directly here is correct regardless of whether #s-wc-workload is
+      // even currently mounted (same reasoning as the old liteEl bug this
+      // replaced: a DOM element reference from a sibling function scope
+      // isn't reliable, localStorage always is).
+      var r = await fetch('/api/hc/crack', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({hash_file:H2, workload:localStorage.getItem('kiki_wc_workload') || '2'})});
       var d = await r.json();
       if(!d.ok){
         lg('err', d.error||'failed'); st('error','err');
@@ -3097,10 +4675,11 @@ document.addEventListener("pointermove",(e)=>{
     // whole document (and every later <script>) has already parsed (it's
     // triggered by sw() opening the tab, or the initial page-load init IIFE
     // further down that also runs after everything's defined).
-    if(!waveAttached && window.attachWaveBar){
-      waveAttached = true;
-      window.attachWaveBar('wc-prog-wave', {progress: function(){ return progPct / 100; }, amp: 5, strokeWidth: 3});
-    }
+    wcApplyCrackStyle();
+    // Workload seg-switch now lives in Settings → WiFi Cracker (borrowed by
+    // the header modal via reparenting, see openWcSettingsModal) — same
+    // deferred-until-parsed reasoning as attachWaveBar above.
+    markActive('s-wc-workload', localStorage.getItem('kiki_wc_workload') || '2');
     try{
       var r = await fetch('/api/hc/status'), d = await r.json();
       [['hashcat','wc-p-hc'],['rockyou','wc-p-ry'],['hcxtool','wc-p-hx'],['tshark','wc-p-ts']].forEach(function(kv){
@@ -3112,7 +4691,35 @@ document.addEventListener("pointermove",(e)=>{
   }
   window.wcPick = wcPick; window.wcOnP = wcOnP; window.wcDoA = wcDoA;
   window.wcDoC = wcDoC; window.wcDoS = wcDoS; window.wcClr = wcClr; window.wcChk = wcChk;
-  window.wcOnLite = wcOnLite;
+  window.wcSetWorkload = wcSetWorkload;
+  // The WiFi Cracker settings modal doesn't carry its own copy of the
+  // settings — it borrows the real #settings-section-wifi node (the same
+  // one shown under Settings → WiFi Cracker) by reparenting it into the
+  // modal body, then hands it back to Settings on close. One DOM node, one
+  // set of event listeners, no risk of the two views drifting apart.
+  var _wcSettingsHome = null;
+  function openWcSettingsModal(){
+    var body = document.getElementById('settings-section-wifi');
+    if(body && !_wcSettingsHome){
+      _wcSettingsHome = {parent: body.parentNode, next: body.nextSibling};
+      document.getElementById('wc-set-modal-body').appendChild(body);
+    }
+    document.getElementById('wc-set-modal').classList.add('show');
+    _wcInitCrackPreviews();
+  }
+  function closeWcSettingsModal(){
+    document.getElementById('wc-set-modal').classList.remove('show');
+    if(_wcSettingsHome){
+      _wcSettingsHome.parent.insertBefore(document.getElementById('settings-section-wifi'), _wcSettingsHome.next);
+      _wcSettingsHome = null;
+    }
+  }
+  document.addEventListener('click', function(ev){
+    if(ev.target.id === 'wc-set-modal') closeWcSettingsModal();
+  });
+  window.openWcSettingsModal = openWcSettingsModal;
+  window.closeWcSettingsModal = closeWcSettingsModal;
+  window.wcSetCrackStyle = wcSetCrackStyle;
   wcChk();
   setTimeout(function(){
     lg('sys','wificrack ready');
@@ -3487,6 +5094,20 @@ document.addEventListener("pointermove",(e)=>{
           <div class="asst-sessions-list" id="asst-sessions-list"></div>
         </div>
       </div>
+      <button class="wc-set-btn" id="asst-set-btn" title="Assistant settings" onclick="openAsstSettingsModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+    <div class="wc-set-modal" id="asst-set-modal">
+      <div class="wc-set-modal-card">
+        <div class="wc-set-modal-head">
+          <span>Assistant settings</span>
+          <button class="wc-set-modal-x" title="Close" onclick="closeAsstSettingsModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="wc-set-modal-body" id="asst-set-modal-body"></div>
+      </div>
     </div>
     <div class="asst-messages" id="asst-messages"></div>
     <div class="asst-input-dock">
@@ -3513,6 +5134,9 @@ document.addEventListener("pointermove",(e)=>{
       <button class="settings-cat-btn" data-cat="transparency" onclick="setSettingsCategory('transparency')" title="Transparency"><svg viewBox="0 0 256 256" fill="currentColor"><path d="M230.91,172A8,8,0,0,1,228,182.91l-96,56a8,8,0,0,1-8.06,0l-96-56A8,8,0,0,1,36,169.09l92,53.65,92-53.65A8,8,0,0,1,230.91,172ZM220,121.09l-92,53.65L36,121.09A8,8,0,0,0,28,134.91l96,56a8,8,0,0,0,8.06,0l96-56A8,8,0,1,0,220,121.09ZM24,80a8,8,0,0,1,4-6.91l96-56a8,8,0,0,1,8.06,0l96,56a8,8,0,0,1,0,13.82l-96,56a8,8,0,0,1-8.06,0l-96-56A8,8,0,0,1,24,80Zm23.88,0L128,126.74,208.12,80,128,33.26Z"/></svg></button>
       <button class="settings-cat-btn" data-cat="sliders" onclick="setSettingsCategory('sliders')" title="Sliders &amp; Cards"><svg viewBox="0 0 256 256" fill="currentColor"><path d="M176,80a8,8,0,0,1,8-8h32a8,8,0,0,1,0,16H184A8,8,0,0,1,176,80ZM40,88H144v16a8,8,0,0,0,16,0V56a8,8,0,0,0-16,0V72H40a8,8,0,0,0,0,16Zm176,80H120a8,8,0,0,0,0,16h96a8,8,0,0,0,0-16ZM88,144a8,8,0,0,0-8,8v16H40a8,8,0,0,0,0,16H80v16a8,8,0,0,0,16,0V152A8,8,0,0,0,88,144Z"/></svg></button>
       <button class="settings-cat-btn" data-cat="ai" onclick="setSettingsCategory('ai')" title="AI &amp; API Keys"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg></button>
+      <button class="settings-cat-btn" data-cat="wifi" onclick="setSettingsCategory('wifi')" title="WiFi Cracker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg></button>
+      <button class="settings-cat-btn" data-cat="assistant" onclick="setSettingsCategory('assistant')" title="Assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M2 14h2M20 14h2M9 13v2M15 13v2"/></svg></button>
+      <button class="settings-cat-btn" data-cat="themes" onclick="setSettingsCategory('themes')" title="Themes"><svg viewBox="0 0 256 256" fill="currentColor"><path d="M216,24H72A40,40,0,0,0,32,64v72a24,24,0,0,0,24,24h48l-7.89,46.67A8.42,8.42,0,0,0,96,208a32,32,0,0,0,64,0,8.42,8.42,0,0,0-.11-1.33L152,160h48a24,24,0,0,0,24-24V32A8,8,0,0,0,216,24ZM72,40H176V80a8,8,0,0,0,16,0V40h16v64H48V64A24,24,0,0,1,72,40ZM200,144H152a16,16,0,0,0-15.84,18.26l0,.2L144,208.6a16,16,0,0,1-32,0l7.8-46.14,0-.2A16,16,0,0,0,104,144H56a8,8,0,0,1-8-8V120H208v16A8,8,0,0,1,200,144Z"/></svg></button>
       <button class="settings-cat-btn" data-cat="tools" onclick="setSettingsCategory('tools')" title="Advanced"><svg viewBox="0 0 256 256" fill="currentColor"><path d="M144,92a12,12,0,1,1,12,12A12,12,0,0,1,144,92ZM100,80a12,12,0,1,0,12,12A12,12,0,0,0,100,80Zm116,64A87.76,87.76,0,0,1,213,167l22.24,9.72A8,8,0,0,1,232,192a7.89,7.89,0,0,1-3.2-.67L207.38,182a88,88,0,0,1-158.76,0L27.2,191.33A7.89,7.89,0,0,1,24,192a8,8,0,0,1-3.2-15.33L43,167A87.76,87.76,0,0,1,40,144v-8H16a8,8,0,0,1,0-16H40v-8a87.76,87.76,0,0,1,3-23L20.8,79.33a8,8,0,1,1,6.4-14.66L48.62,74a88,88,0,0,1,158.76,0l21.42-9.36a8,8,0,0,1,6.4,14.66L213,89.05a87.76,87.76,0,0,1,3,23v8h24a8,8,0,0,1,0,16H216ZM56,120H200v-8a72,72,0,0,0-144,0Zm64,95.54V136H56v8A72.08,72.08,0,0,0,120,215.54ZM200,144v-8H136v79.54A72.08,72.08,0,0,0,200,144Z"/></svg></button>
     </div>
     <div class="settings-section">
@@ -3530,20 +5154,11 @@ document.addEventListener("pointermove",(e)=>{
         <button class="seg-btn" data-val="rail" onclick="setNavStyle('rail')">Rail</button>
       </div>
     </div>
-    <div class="setting-row" style="align-items:flex-start"><div class="setting-label" id="s-app-theme-label">App Theme</div>
-      <div style="width:100%">
-        <div class="bg-swatch-row" id="app-theme-presets">
-          <button class="bg-swatch bg-swatch-dual" data-val="glacier" style="--c1:#A8E6FF;--c2:#001020" data-i18n-title="themeGlacier" title="Glacier" onclick="applyAppTheme('#A8E6FF','#001020','glacier')"></button>
-          <button class="bg-swatch bg-swatch-dual" data-val="dusk" style="--c1:#FF6B9C;--c2:#200310" data-i18n-title="themeDusk" title="Dusk" onclick="applyAppTheme('#FF6B9C','#200310','dusk')"></button>
-          <button class="bg-swatch bg-swatch-dual" data-val="solar" style="--c1:#FFC500;--c2:#1A1200" data-i18n-title="themeSolar" title="Solar" onclick="applyAppTheme('#FFC500','#1A1200','solar')"></button>
-          <button class="bg-swatch bg-swatch-dual" data-val="arctic" style="--c1:#E8F5FF;--c2:#0050D8" data-i18n-title="themeArctic" title="Arctic" onclick="applyAppTheme('#E8F5FF','#0050D8','arctic')"></button>
-          <button class="bg-swatch bg-swatch-dual" data-val="fern" style="--c1:#00C85A;--c2:#001A08" data-i18n-title="themeFern" title="Fern" onclick="applyAppTheme('#00C85A','#001A08','fern')"></button>
-          <button class="bg-swatch bg-swatch-dual" data-val="blaze" style="--c1:#FF2D2D;--c2:#1A0000" data-i18n-title="themeBlaze" title="Blaze" onclick="applyAppTheme('#FF2D2D','#1A0000','blaze')"></button>
-          <button class="bg-swatch bg-swatch-dual" data-val="neonTide" style="--c1:#00F5AA;--c2:#3B00FF" data-i18n-title="themeNeonTide" title="Neon Tide" onclick="applyAppTheme('#00F5AA','#3B00FF','neonTide')"></button>
-          <button class="bg-swatch bg-swatch-dual" data-val="solarFlare" style="--c1:#FFAA00;--c2:#E8003A" data-i18n-title="themeSolarFlare" title="Solar Flare" onclick="applyAppTheme('#FFAA00','#E8003A','solarFlare')"></button>
-          <button class="bg-swatch bg-swatch-dual" data-val="duskViolet" style="--c1:#FF5CBA;--c2:#2B00FF" data-i18n-title="themeDuskViolet" title="Dusk Violet" onclick="applyAppTheme('#FF5CBA','#2B00FF','duskViolet')"></button>
-          <button class="bg-swatch bg-swatch-off" data-val="reset" data-i18n-title="themeReset" title="Reset to default" onclick="resetAppTheme()"></button>
-        </div>
+    <div class="setting-row"><div class="setting-label" id="s-nav-text-style-label">Nav Style</div>
+      <div class="seg-switch" id="s-nav-text-style">
+        <button class="seg-btn" data-val="icons" onclick="setNavTextStyle('icons')">Icons</button>
+        <button class="seg-btn" data-val="tmux" onclick="setNavTextStyle('tmux')" title="Numbered text tabs, tmux status-line style">tmux</button>
+        <button class="seg-btn" data-val="breadcrumb" onclick="setNavTextStyle('breadcrumb')" title="Plain text path, leading slash per item">breadcrumb</button>
       </div>
     </div>
       </div>
@@ -3569,6 +5184,8 @@ document.addEventListener("pointermove",(e)=>{
           <button class="bg-name-btn" data-val="beams" onclick="setBgPreset('beams')" style="--sw2:#5cd6ff">Beams</button>
           <button class="bg-name-btn" data-val="rays" onclick="setBgPreset('rays')" style="--sw2:#5cd6ff">Light Rays</button>
           <button class="bg-name-btn bg-swatch-off" data-val="off" onclick="setBgPreset('off')">Off</button>
+          <button class="bg-name-btn" data-val="slate" style="--sw2:#121212" onclick="setBgPreset('slate')">Slate</button>
+          <button class="bg-name-btn" data-val="paper" style="--sw2:#F5F5F5" onclick="setBgPreset('paper')">Paper</button>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:12px">
           <span style="font-size:10px;color:var(--t3);font-family:'JetBrains Mono',monospace">SHADER COLOR</span>
@@ -3605,7 +5222,6 @@ document.addEventListener("pointermove",(e)=>{
         <div class="preview-block" id="loader-preview-block">
           <div class="preview-block-head">
             <span style="font-size:10px;color:var(--t3);font-family:'JetBrains Mono',monospace">PREVIEW</span>
-            <button class="preview-hide-btn" id="loader-preview-toggle-btn" onclick="toggleLoaderPreview()" title="Show/hide preview">−</button>
           </div>
           <div class="loader-preview-wrap" id="loader-preview-wrap-inner">
             <div class="loader-preview-item">
@@ -3621,6 +5237,8 @@ document.addEventListener("pointermove",(e)=>{
         <div class="seg-switch" id="s-loader-style">
           <button class="seg-btn" data-val="you" onclick="setLoaderStyle('you')">Material You</button>
           <button class="seg-btn" data-val="classic" onclick="setLoaderStyle('classic')">Classic</button>
+          <button class="seg-btn" data-val="ascii" onclick="setLoaderStyle('ascii')" title="ASCII bracket bar">ASCII</button>
+          <button class="seg-btn" data-val="curl" onclick="setLoaderStyle('curl')" title="curl-style meter">curl</button>
         </div>
         <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
           <span style="font-size:10px;color:var(--t3);font-family:'JetBrains Mono',monospace">CONTAINER</span>
@@ -3735,6 +5353,7 @@ document.addEventListener("pointermove",(e)=>{
     <div class="setting-row"><div class="setting-label" id="s-gem-label">Gemini API</div><input class="setting-inp" id="s-gem" placeholder="AIza..."></div>
     <div class="setting-row"><div class="setting-label" id="s-ant-label">Anthropic API</div><input class="setting-inp" id="s-ant" placeholder="sk-ant-..."></div>
     <div class="setting-row"><div class="setting-label" id="s-deepseek-label">DeepSeek API</div><input class="setting-inp" id="s-deepseek" placeholder="sk-..."></div>
+    <div class="setting-row"><div class="setting-label" id="s-brave-label">Brave Search API</div><input class="setting-inp" id="s-brave" placeholder="BSA..."></div>
     <div class="setting-row" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(92,214,255,.06);border:1px solid rgba(92,214,255,.15);border-radius:var(--r2)">
       <svg viewBox="0 0 256 256" style="width:18px;height:18px;flex-shrink:0;color:var(--a)"><path d="M208,40H48A16,16,0,0,0,32,56v56c0,52.72,25.52,84.67,46.93,102.19,23.06,18.86,46,25.26,47,25.53a8,8,0,0,0,4.2,0c1-.27,23.91-6.67,47-25.53C198.48,196.67,224,164.72,224,112V56A16,16,0,0,0,208,40Zm0,72c0,37.07-13.66,67.16-40.6,89.42A129.3,129.3,0,0,1,128,223.62a128.25,128.25,0,0,1-38.92-21.81C61.82,179.51,48,149.3,48,112l0-56,160,0ZM82.34,141.66a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32l-56,56a8,8,0,0,1-11.32,0Z" fill="currentColor"/></svg>
       <span id="s-keys-privacy-note" style="font-size:11.5px;line-height:1.5;color:var(--t2)">Keys are stored locally on this device and never leave it.</span>
@@ -3745,6 +5364,119 @@ document.addEventListener("pointermove",(e)=>{
         <button class="ui-lang-btn" id="s-ai-lang-en" onclick="setAiLang('en')">English</button>
       </div>
     </div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-head"><span class="settings-section-title" id="s-sec-wifi">WiFi Cracker</span></div>
+      <div class="settings-section-body" id="settings-section-wifi">
+        <div class="setting-row"><div class="setting-label" id="s-wc-lite-label">Workload</div>
+          <div class="seg-switch" id="s-wc-workload" title="Default: hashcat's own normal workload profile. Low: hashcat's -w 1 (its own lowest throttle). Eco: -w 1 PLUS the whole hashcat process dropped to Windows' Idle process priority, so it only actually gets CPU/GPU scheduling slack — lower than hashcat's own -w can go on its own.">
+            <button class="seg-btn" data-val="2" onclick="wcSetWorkload(2)">Default</button>
+            <button class="seg-btn" data-val="1" onclick="wcSetWorkload(1)">Low</button>
+            <button class="seg-btn" data-val="eco" onclick="wcSetWorkload('eco')">Eco</button>
+          </div>
+        </div>
+        <div class="setting-row" style="align-items:flex-start"><div class="setting-label" id="s-wc-crack-style-label">Crack Progress Style</div>
+          <div class="preview-block" id="wc-crack-preview-block">
+            <div class="preview-block-head">
+              <span style="font-size:10px;color:var(--t3);font-family:'JetBrains Mono',monospace">PREVIEW</span>
+            </div>
+            <div class="wc-crack-preview" id="s-wc-crack-preview"></div>
+          </div>
+          <div class="seg-switch" id="s-wc-crack-style">
+            <button class="seg-btn" data-val="default" onclick="wcSetCrackStyle('default')" title="Same as the global Loading Indicator setting">Default</button>
+            <button class="seg-btn" data-val="glitch" onclick="wcSetCrackStyle('glitch')" title="Glitch scanline bar">Glitch</button>
+            <button class="seg-btn" data-val="radial" onclick="wcSetCrackStyle('radial')" title="Radial ring gauge">Radial</button>
+            <button class="seg-btn" data-val="hex" onclick="wcSetCrackStyle('hex')" title="Hex ticker">Hex</button>
+          </div>
+        </div>
+        <div class="setting-row" style="flex-direction:column;align-items:stretch;gap:8px"><div class="setting-label" id="s-wc-progress-label">Progress Bar Style</div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:10px">
+            <span id="s-wc-progress-note" style="font-size:11.5px;color:var(--t3);line-height:1.5;text-align:center">Shared with every other loading bar in the app — style, color and thickness live in one place so they can't drift out of sync.</span>
+            <button class="setting-btn" id="s-wc-progress-btn" style="width:auto;white-space:nowrap;padding:0 14px;margin-top:0" onclick="closeWcSettingsModal(); sw('settings'); setSettingsCategory('indicators')">Open Loading Indicator settings</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-head"><span class="settings-section-title" id="s-sec-assistant">Assistant</span></div>
+      <div class="settings-section-body" id="settings-section-assistant">
+        <div class="setting-row"><div class="setting-label" id="s-asst-typing-label">Typing Effect</div>
+          <div class="seg-switch" id="s-asst-typing">
+            <button class="seg-btn" data-val="off" onclick="setAsstTyping(false)">Off</button>
+            <button class="seg-btn" data-val="on" onclick="setAsstTyping(true)">On</button>
+          </div>
+        </div>
+        <div class="setting-row"><div class="setting-label" id="s-asst-speed-label">Typing Speed</div>
+          <div class="seg-switch" id="s-asst-speed">
+            <button class="seg-btn" data-val="80" onclick="setAsstTypingSpeed(80)">Slow</button>
+            <button class="seg-btn" data-val="35" onclick="setAsstTypingSpeed(35)">Normal</button>
+            <button class="seg-btn" data-val="12" onclick="setAsstTypingSpeed(12)">Fast</button>
+          </div>
+        </div>
+        <div class="setting-row"><div class="setting-label" id="s-asst-cursor-label">Cursor</div>
+          <div class="seg-switch" id="s-asst-cursor">
+            <button class="seg-btn" data-val="&#9612;" onclick="setAsstCursor('&#9612;')">&#9612;</button>
+            <button class="seg-btn" data-val="|" onclick="setAsstCursor('|')">|</button>
+            <button class="seg-btn" data-val="&#9611;" onclick="setAsstCursor('&#9611;')">&#9611;</button>
+          </div>
+        </div>
+        <div class="setting-row"><div class="setting-label" id="s-asst-name-label">Call You By</div>
+          <input class="setting-inp" id="s-asst-name" placeholder="e.g. Karen" onchange="setAsstUserName(this.value)"></div>
+        <div class="setting-row" style="align-items:flex-start"><div class="setting-label" id="s-asst-fact-label">Always Remember</div>
+          <textarea class="setting-inp" id="s-asst-fact" rows="3" style="resize:vertical;font-family:inherit;min-height:60px" placeholder="Any standing context Kiki should always have — not a system prompt, just a fact." onchange="setAsstFact(this.value)"></textarea></div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-head"><span class="settings-section-title" id="s-sec-themes">Themes</span></div>
+      <div class="settings-section-body" id="settings-section-themes">
+        <div class="setting-row" style="align-items:flex-start"><div class="setting-label" id="s-app-theme-label">App Theme</div>
+          <div style="width:100%">
+            <!-- Circular dual-tone swatches looked like abstract diagonal color
+                 blobs with no indication of what clicking one actually does —
+                 switched to the same name-pill pattern already used for
+                 Background Shader presets (bg-name-row/.bg-name-btn) below,
+                 so the result of picking one is a legible word, not a guess. -->
+            <div class="bg-name-row" id="app-theme-presets">
+              <button class="bg-name-btn" data-val="glacier" style="--sw2:#A8E6FF" onclick="applyAppTheme('#A8E6FF','#001020','glacier')">Glacier</button>
+              <button class="bg-name-btn" data-val="dusk" style="--sw2:#FF6B9C" onclick="applyAppTheme('#FF6B9C','#200310','dusk')">Dusk</button>
+              <button class="bg-name-btn" data-val="solar" style="--sw2:#FFC500" onclick="applyAppTheme('#FFC500','#1A1200','solar')">Solar</button>
+              <button class="bg-name-btn" data-val="arctic" style="--sw2:#E8F5FF" onclick="applyAppTheme('#E8F5FF','#0050D8','arctic')">Arctic</button>
+              <button class="bg-name-btn" data-val="fern" style="--sw2:#00C85A" onclick="applyAppTheme('#00C85A','#001A08','fern')">Fern</button>
+              <button class="bg-name-btn" data-val="blaze" style="--sw2:#FF2D2D" onclick="applyAppTheme('#FF2D2D','#1A0000','blaze')">Blaze</button>
+              <button class="bg-name-btn" data-val="neonTide" style="--sw2:#00F5AA" onclick="applyAppTheme('#00F5AA','#3B00FF','neonTide')">Neon Tide</button>
+              <button class="bg-name-btn" data-val="solarFlare" style="--sw2:#FFAA00" onclick="applyAppTheme('#FFAA00','#E8003A','solarFlare')">Solar Flare</button>
+              <button class="bg-name-btn" data-val="duskViolet" style="--sw2:#FF5CBA" onclick="applyAppTheme('#FF5CBA','#2B00FF','duskViolet')">Dusk Violet</button>
+              <button class="bg-name-btn" data-val="vapor" style="--sw2:#0094FF" onclick="applyAppTheme('#0094FF','#0D1620','vapor')">Vapor</button>
+              <button class="bg-name-btn" data-val="fjord" style="--sw2:#55C7E8" onclick="applyAppTheme('#55C7E8','#101A20','fjord')">Fjord</button>
+              <button class="bg-name-btn" data-val="orchid" style="--sw2:#B69DF8" onclick="applyAppTheme('#B69DF8','#1B1023','orchid')">Orchid</button>
+              <button class="bg-name-btn bg-swatch-off" data-val="reset" onclick="resetAppTheme()">Reset</button>
+            </div>
+          </div>
+        </div>
+        <div class="row-sub" style="font-size:9.5px;color:var(--t3);letter-spacing:.04em;margin:14px 0 10px;text-transform:uppercase;font-family:'JetBrains Mono',monospace">App Style</div>
+        <div class="app-style-card" data-style="current" onclick="setAppStyle('current')" style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--g-bd2);border-radius:var(--r2);margin-bottom:8px;cursor:pointer">
+          <div class="app-style-icon" style="width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--a),var(--bg));display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;line-height:1;text-align:center;color:#fff;flex-shrink:0">Aa</div>
+          <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">Current</div><div style="font-size:11px;color:var(--t3);margin-top:2px">The design you already have</div></div>
+          <span class="app-style-badge" data-badge-for="current" style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:100px;flex-shrink:0"></span>
+        </div>
+        <div class="app-style-card" data-style="material" onclick="setAppStyle('material')" style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--g-bd2);border-radius:var(--r2);margin-bottom:8px;cursor:pointer">
+          <div class="app-style-icon" style="width:36px;height:36px;border-radius:9px;background:var(--a);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;line-height:1;text-align:center;flex-shrink:0">M3</div>
+          <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">Material Expressive</div><div style="font-size:11px;color:var(--t3);margin-top:2px">Bigger shapes, tonal surfaces, pill buttons</div></div>
+          <span class="app-style-badge" data-badge-for="material" style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:100px;flex-shrink:0"></span>
+        </div>
+        <div class="app-style-card" data-style="kali" onclick="setAppStyle('kali')" style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--g-bd2);border-radius:var(--r2);margin-bottom:8px;cursor:pointer">
+          <div class="app-style-icon" style="width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#367BF0,#CD5C81);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;line-height:1;text-align:center;flex-shrink:0">K</div>
+          <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">Kali</div><div style="font-size:11px;color:var(--t3);margin-top:2px">Kali Linux blue &amp; mulberry, near-black (stub)</div></div>
+          <span class="app-style-badge" data-badge-for="kali" style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:100px;flex-shrink:0"></span>
+        </div>
+        <div class="setting-row" style="margin-top:-4px">
+          <div class="setting-label" id="s-material-scheme-label">Material Scheme</div>
+          <div class="seg-switch" id="s-material-scheme">
+            <button class="seg-btn" data-val="light" onclick="setMaterialScheme('light')">Light</button>
+            <button class="seg-btn" data-val="dark" onclick="setMaterialScheme('dark')">Dark</button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="settings-section">
@@ -3782,15 +5514,15 @@ document.addEventListener("pointermove",(e)=>{
           </div>
         </div>
         <div class="setting-row"><div class="setting-label" id="s-report-bug-label">Report a Bug</div>
-          <button class="setting-btn" id="s-report-bug-btn" style="margin-top:0" onclick="window.open('https://github.com/kikikoteyka-dev/Kiki-Osint/issues/new?labels=bug&amp;title=%5BBug%5D%20','_blank')">Open on GitHub</button>
+          <button class="setting-btn" id="s-report-bug-btn" style="margin-top:0" onclick="window.open('https://github.com/kiki-koteyka/Kiki-Hub/issues/new?labels=bug&amp;title=%5BBug%5D%20','_blank')">Open on GitHub</button>
         </div>
         <div class="setting-row"><div class="setting-label" id="s-send-feedback-label">Send Feedback</div>
-          <button class="setting-btn" id="s-send-feedback-btn" style="margin-top:0" onclick="window.open('https://github.com/kikikoteyka-dev/Kiki-Osint/issues/new?title=%5BFeedback%5D%20','_blank')">Open on GitHub</button>
+          <button class="setting-btn" id="s-send-feedback-btn" style="margin-top:0" onclick="window.open('https://github.com/kiki-koteyka/Kiki-Hub/issues/new?title=%5BFeedback%5D%20','_blank')">Open on GitHub</button>
+        </div>
+        <div class="setting-row"><div class="setting-label" id="s-first-run-label">First-run Setup</div>
+          <button class="setting-btn" id="s-run-setup-btn" style="margin-top:0" onclick="restartOnboarding()">Run setup again</button>
         </div>
       </div>
-    </div>
-    <div class="setting-row"><div class="setting-label" id="s-first-run-label">First-run Setup</div>
-      <button class="setting-btn" id="s-run-setup-btn" style="margin-top:0" onclick="restartOnboarding()">Run setup again</button>
     </div>
     <button class="setting-btn" id="s-save-btn" onclick="saveSettings()">Save</button>
   </div>
@@ -3804,48 +5536,57 @@ document.addEventListener("pointermove",(e)=>{
   <button class="icon-btn c-teal is-active" id="di-osint" onclick="sw('osint')">
     <span class="icon-btn__back"></span>
     <span class="icon-btn__front"><span class="icon-btn__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span></span>
+    <span class="icon-btn__abbr">OS</span>
     <span class="icon-btn__label">Kiki OSINT</span>
   </button>
   <div class="icon-btn-sep"></div>
   <button class="icon-btn c-wifi" id="di-hc" onclick="sw('hc')">
+    <span class="icon-btn__badge"></span>
     <span class="icon-btn__back"></span>
     <span class="icon-btn__front"><span class="icon-btn__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg></span></span>
+    <span class="icon-btn__abbr">WF</span>
     <span class="icon-btn__label">WiFi Cracker</span>
   </button>
   <div class="icon-btn-sep"></div>
   <button class="icon-btn c-flipper" id="di-flipper" onclick="sw('flipper')">
     <span class="icon-btn__back"></span>
     <span class="icon-btn__front"></span>
+    <span class="icon-btn__abbr">FZ</span>
     <span class="icon-btn__label">Flipper Zero</span>
   </button>
   <div class="icon-btn-sep"></div>
   <button class="icon-btn c-dl" id="di-dl" onclick="sw('dl')">
     <span class="icon-btn__back"></span>
     <span class="icon-btn__front"><span class="icon-btn__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span></span>
+    <span class="icon-btn__abbr">DL</span>
     <span class="icon-btn__label">Downloader</span>
   </button>
   <div class="icon-btn-sep"></div>
   <button class="icon-btn c-geo" id="di-geoint" onclick="sw('geoint')">
     <span class="icon-btn__back"></span>
     <span class="icon-btn__front"><span class="icon-btn__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span></span>
+    <span class="icon-btn__abbr">GE</span>
     <span class="icon-btn__label">GEOINT</span>
   </button>
   <div class="icon-btn-sep"></div>
   <button class="icon-btn c-unredact" id="di-unredact" onclick="sw('unredact')">
     <span class="icon-btn__back"></span>
     <span class="icon-btn__front"><span class="icon-btn__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/><line x1="2" y1="2" x2="22" y2="22"/></svg></span></span>
+    <span class="icon-btn__abbr">RT</span>
     <span class="icon-btn__label">Reveal Text</span>
   </button>
   <div class="icon-btn-sep"></div>
   <button class="icon-btn c-assistant" id="di-assistant" onclick="sw('assistant')">
     <span class="icon-btn__back"></span>
     <span class="icon-btn__front"><span class="icon-btn__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M2 14h2M20 14h2M9 13v2M15 13v2"/></svg></span></span>
+    <span class="icon-btn__abbr">AI</span>
     <span class="icon-btn__label">Assistant</span>
   </button>
   <div class="icon-btn-sep"></div>
   <button class="icon-btn c-slate" id="di-settings" onclick="sw('settings')">
     <span class="icon-btn__back"></span>
     <span class="icon-btn__front"><span class="icon-btn__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span></span>
+    <span class="icon-btn__abbr">ST</span>
     <span class="icon-btn__label">Настройки</span>
   </button>
 </div>
@@ -3878,13 +5619,19 @@ var TOOL_LABELS = {
        sTitle:'Settings', sVkLabel:'VK Token', sMistralLabel:'Mistral API (Recommended)', sGemLabel:'Gemini API',
        sAntLabel:'Anthropic API', sDeepseekLabel:'DeepSeek API', sSaveBtn:'Save',
        sAiLangLabel:'AI Response Language', sUiLangLabel:'Interface Language',
-       sNavStyleLabel:'Menu Style', sBgLabel:'Background', sLoaderStyleLabel:'Loading Indicator',
+       sNavStyleLabel:'Menu Style', sNavTextStyleLabel:'Nav Style', sBgLabel:'Background', sLoaderStyleLabel:'Loading Indicator',
        sTransparentLabel:'See-through desktop', sTransparencyLabel:'Transparency',
        sKeysPrivacyNote:'Keys are stored locally on this device and never leave it.',
        sSliderStyleLabel:'Slider Style', sCardGlassLabel:'Card Backdrop', sSliderThicknessLabel:'Track Thickness',
        sSliderSnapLabel:'Snapping', sDebugLabel:'Debug Mode', sFirstRunLabel:'First-run Setup', sRunSetupBtn:'Run setup again',
        sSecInterface:'Interface', sSecBackground:'Background', sSecIndicators:'Indicators',
        sSecTransparency:'Transparency', sSecSliders:'Sliders & Cards', sSecAi:'AI & API Keys',
+       sSecWifi:'WiFi Cracker', sWcLiteLabel:'Workload',
+       sWcCrackStyleLabel:'Crack Progress Style',
+       sWcProgressLabel:'Progress Bar Style', sWcProgressNote:'Shared with every other loading bar in the app — style, color and thickness live in one place so they can’t drift out of sync.',
+       sWcProgressBtn:'Open Loading Indicator settings',
+       sSecAssistant:'Assistant', sAsstTypingLabel:'Typing Effect', sAsstSpeedLabel:'Typing Speed', sAsstCursorLabel:'Cursor',
+       sSecThemes:'Themes',
        sSecTools:'Advanced', sToolHashcat:'Hashcat', sToolWordlist:'Wordlist (rockyou.txt)',
        sToolTshark:'Wireshark (tshark)', sBrowse:'Browse…',
        sReportBugLabel:'Report a Bug', sSendFeedbackLabel:'Send Feedback', sOpenOnGithub:'Open on GitHub',
@@ -3925,13 +5672,19 @@ var TOOL_LABELS = {
        sTitle:'Настройки', sVkLabel:'VK Token', sMistralLabel:'Mistral API (Рекомендуется)', sGemLabel:'Gemini API',
        sAntLabel:'Anthropic API', sDeepseekLabel:'DeepSeek API', sSaveBtn:'Сохранить',
        sAiLangLabel:'Язык ответов AI', sUiLangLabel:'Язык интерфейса',
-       sNavStyleLabel:'Стиль меню', sBgLabel:'Фон', sLoaderStyleLabel:'Индикатор загрузки',
+       sNavStyleLabel:'Стиль меню', sNavTextStyleLabel:'Стиль навигации', sBgLabel:'Фон', sLoaderStyleLabel:'Индикатор загрузки',
        sTransparentLabel:'Прозрачность рабочего стола', sTransparencyLabel:'Прозрачность',
        sKeysPrivacyNote:'Ключи хранятся локально на этом устройстве и никуда не передаются.',
        sSliderStyleLabel:'Стиль слайдера', sCardGlassLabel:'Фон карточек', sSliderThicknessLabel:'Толщина полосы',
        sSliderSnapLabel:'Привязка', sDebugLabel:'Режим отладки', sFirstRunLabel:'Настройка при первом запуске', sRunSetupBtn:'Запустить настройку снова',
        sSecInterface:'Интерфейс', sSecBackground:'Фон', sSecIndicators:'Индикаторы',
        sSecTransparency:'Прозрачность', sSecSliders:'Слайдеры и карточки', sSecAi:'AI и API-ключи',
+       sSecWifi:'WiFi Cracker', sWcLiteLabel:'Нагрузка',
+       sWcCrackStyleLabel:'Стиль прогресса крака',
+       sWcProgressLabel:'Стиль прогресс-бара', sWcProgressNote:'Общий для всех индикаторов загрузки в приложении — стиль, цвет и толщина настраиваются в одном месте, чтобы не разъезжались.',
+       sWcProgressBtn:'Открыть настройки индикатора загрузки',
+       sSecAssistant:'Ассистент', sAsstTypingLabel:'Эффект печати', sAsstSpeedLabel:'Скорость печати', sAsstCursorLabel:'Курсор',
+       sSecThemes:'Темы',
        sSecTools:'Дополнительно', sToolHashcat:'Hashcat', sToolWordlist:'Словарь (rockyou.txt)',
        sToolTshark:'Wireshark (tshark)', sBrowse:'Обзор…',
        sReportBugLabel:'Сообщить о баге', sSendFeedbackLabel:'Оставить отзыв', sOpenOnGithub:'Открыть на GitHub',
@@ -3995,6 +5748,17 @@ function setToolLang(lang){
   document.getElementById('s-ant-label').textContent = t.sAntLabel;
   document.getElementById('s-deepseek-label').textContent = t.sDeepseekLabel;
   document.getElementById('s-save-btn').textContent = t.sSaveBtn;
+  document.getElementById('s-sec-wifi').textContent = t.sSecWifi;
+  document.getElementById('s-wc-lite-label').textContent = t.sWcLiteLabel;
+  document.getElementById('s-wc-progress-label').textContent = t.sWcProgressLabel;
+  document.getElementById('s-wc-crack-style-label').textContent = t.sWcCrackStyleLabel;
+  document.getElementById('s-wc-progress-note').textContent = t.sWcProgressNote;
+  document.getElementById('s-wc-progress-btn').textContent = t.sWcProgressBtn;
+  document.getElementById('s-sec-assistant').textContent = t.sSecAssistant;
+  document.getElementById('s-asst-typing-label').textContent = t.sAsstTypingLabel;
+  document.getElementById('s-asst-speed-label').textContent = t.sAsstSpeedLabel;
+  document.getElementById('s-asst-cursor-label').textContent = t.sAsstCursorLabel;
+  document.getElementById('s-sec-themes').textContent = t.sSecThemes;
   document.getElementById('s-sec-tools').textContent = t.sSecTools;
   document.getElementById('s-tool-hashcat-label').textContent = t.sToolHashcat;
   document.getElementById('s-tool-wordlist-label').textContent = t.sToolWordlist;
@@ -4043,6 +5807,7 @@ function setToolLang(lang){
   document.getElementById('dockToggle').title = t.dockToggleTitle;
   document.getElementById('s-app-theme-label').textContent = t.sAppThemeLabel;
   document.getElementById('s-nav-style-label').textContent = t.sNavStyleLabel;
+  document.getElementById('s-nav-text-style-label').textContent = t.sNavTextStyleLabel;
   document.getElementById('s-bg-label').textContent = t.sBgLabel;
   document.getElementById('s-loader-style-label').textContent = t.sLoaderStyleLabel;
   document.getElementById('s-transparent-label').textContent = t.sTransparentLabel;
@@ -4073,8 +5838,14 @@ setToolLang(localStorage.getItem('kiki_lang') || 'en');
 function setUiLang(lang){
   localStorage.setItem('kiki_lang', lang);
   setDockLang(lang); setToolLang(lang);
-  var osintFrame = document.getElementById('osint-frame');
-  if(osintFrame && osintFrame.contentWindow) osintFrame.contentWindow.postMessage({type:'kiki-lang', lang:lang}, '*');
+  // #osint-frame used to be a real <iframe> — this postMessage targeted its
+  // contentWindow back then. loadOsintPanel() now transcludes that panel's
+  // HTML/script directly into THIS document instead (see its own comment),
+  // so its setLang() is just a plain global function here, not a message
+  // away — contentWindow is always undefined now and this call was silently
+  // doing nothing, which is why the OSINT panel's own language never
+  // followed the Settings toggle. Call it directly.
+  if(window.setLang) window.setLang(lang);
 }
 
 // ─── AI response language (separate from UI language) ────
@@ -4134,10 +5905,79 @@ function setNavStyle(v){
   localStorage.setItem('kiki_nav_style', v);
   markActive('s-nav-style', v);
 }
+// Separate from Menu Style (dock/rail = layout) on purpose — this is
+// vocabulary (icons vs a numbered tmux-style tab list vs a plain text
+// path), orthogonal to whether that vocabulary is laid out horizontally
+// or vertically. Same [data-nav-text-style] attribute drives both.
+function setNavTextStyle(v){
+  document.documentElement.setAttribute('data-nav-text-style', v);
+  localStorage.setItem('kiki_nav_text_style', v);
+  markActive('s-nav-text-style', v);
+}
+// App Style is a preset button, not a synced state — it bundles Nav Style
+// and Loading Indicator into one click. Picking a preset just calls their
+// existing setters; the badges just reflect which preset was last pressed,
+// and can go stale if the user tweaks one of the settings by hand afterward
+// — same tradeoff a "Save preset" button anywhere else would have.
+function markAppStyle(style){
+  localStorage.setItem('kiki_app_style', style);
+  document.documentElement.setAttribute('data-app-style', style);
+  document.querySelectorAll('.app-style-card').forEach(function(el){
+    el.classList.toggle('is-active', el.dataset.style === style);
+  });
+  document.querySelectorAll('.app-style-badge').forEach(function(el){
+    var on = el.dataset.badgeFor === style;
+    el.textContent = on ? 'active' : 'off';
+    el.classList.toggle('on', on);
+  });
+}
+function setAppStyle(style){
+  // Material Expressive only reshapes components (see the CSS scope under
+  // html[data-app-style="material"]) — it must not also reach over and
+  // force Nav Style / Loader Style, those are independent user settings.
+  if(style !== 'material'){
+    setNavTextStyle('icons');
+    setLoaderStyle('you');
+  }
+  markAppStyle(style);
+}
+// Light/Dark scheme, scoped to Material Expressive only — real M3 is
+// designed to work in both, so this is a genuine second axis, not a
+// cosmetic toggle. Dark is the default (see the --m3-* dark block) so
+// flipping App Style on doesn't blind you inside an otherwise-dark app;
+// Light is one click away in Settings → Themes.
+function setMaterialScheme(scheme){
+  localStorage.setItem('kiki_material_scheme', scheme);
+  document.documentElement.setAttribute('data-material-scheme', scheme);
+  markActive('s-material-scheme', scheme);
+}
+// ─── Dock/rail activity badge — a small pulsing dot on a tab's icon while
+// that tab has a background job running (e.g. WiFi Cracker mid-crack), so
+// switching away doesn't lose track of it. Wired per-tab by calling this
+// wherever that tab already knows its own running/idle state (see the `st()`
+// hook in WiFi Cracker) — kept generic so any future long-running tab can
+// call the same function instead of growing its own indicator.
+window.__kikiProcRunning = window.__kikiProcRunning || {};
+function setProcRunning(name, on){
+  window.__kikiProcRunning[name] = !!on;
+  var btn = document.getElementById('di-' + name);
+  if(!btn) return;
+  var badge = btn.querySelector('.icon-btn__badge');
+  if(badge) badge.classList.toggle('run', !!on);
+}
+window.setProcRunning = setProcRunning;
+
 (function initNavStyle(){
   var v = localStorage.getItem('kiki_nav_style') || 'dock';
   document.documentElement.setAttribute('data-nav-style', v);
   markActive('s-nav-style', v);
+  var tv = localStorage.getItem('kiki_nav_text_style') || 'icons';
+  document.documentElement.setAttribute('data-nav-text-style', tv);
+  markActive('s-nav-text-style', tv);
+  markAppStyle(localStorage.getItem('kiki_app_style') || 'current');
+  var ms = localStorage.getItem('kiki_material_scheme') || 'dark';
+  document.documentElement.setAttribute('data-material-scheme', ms);
+  markActive('s-material-scheme', ms);
   markActive('s-bg-preset', localStorage.getItem('kiki_bg_preset') || 'aurora');
 })();
 
@@ -4260,6 +6100,23 @@ function clampBgLightness(hex){
   function to255(x){return Math.round(x*255).toString(16).padStart(2,'0')}
   return '#'+to255(r2)+to255(g2)+to255(b2);
 }
+// Material Expressive derives --m3-primary/etc from var(--a)/var(--a2) via
+// pure CSS color-mix() (see the html[data-app-style="material"] block) —
+// that's reactive on its own. The one thing pure CSS can't do is turn an
+// arbitrary hex into an "r,g,b" triplet for the ~100 rgba(var(--m3-
+// primary-rgb),alpha) call sites in the OSINT sub-panel, so that one piece
+// stays JS-synced on every App Theme change instead.
+function _hexToRgbTriplet(hex){
+  var n = parseInt(hex.replace('#',''), 16);
+  return ((n>>16)&255)+','+((n>>8)&255)+','+(n&255);
+}
+function _syncM3Rgb(){
+  var root = document.documentElement.style;
+  var a = getComputedStyle(document.documentElement).getPropertyValue('--a').trim();
+  var a2 = getComputedStyle(document.documentElement).getPropertyValue('--a2').trim();
+  try{ root.setProperty('--m3-primary-rgb', _hexToRgbTriplet(a)); }catch(e){}
+  try{ root.setProperty('--m3-tertiary-rgb', _hexToRgbTriplet(a2)); }catch(e){}
+}
 function applyAppTheme(lightHex, darkHex, key){
   var root = document.documentElement.style;
   root.setProperty('--bg', clampBgLightness(darkHex));
@@ -4268,6 +6125,7 @@ function applyAppTheme(lightHex, darkHex, key){
   root.setProperty('--a2', lightHex);
   localStorage.setItem('kiki_app_theme', JSON.stringify({light:lightHex, dark:darkHex, key:key}));
   markActive('app-theme-presets', key);
+  _syncM3Rgb();
 }
 function resetAppTheme(){
   var root = document.documentElement.style;
@@ -4277,6 +6135,7 @@ function resetAppTheme(){
   root.setProperty('--a2', DEFAULT_APP_THEME.light2);
   localStorage.removeItem('kiki_app_theme');
   markActive('app-theme-presets', 'reset');
+  _syncM3Rgb();
 }
 function setLoaderStyle(style){
   localStorage.setItem('kiki_loader_style', style);
@@ -4310,16 +6169,25 @@ function setWaveThickness(thick){
 function setSliderSnap(pct){
   localStorage.setItem('kiki_slider_snap', pct);
   markActive('s-slider-snap', String(pct));
-  // Flat step in the slider's own units (5 or 10), not a percentage of its
-  // range — a 0-60 range and a 0-100 range both snap 0/5/10/15... this way,
-  // matching what "5%"/"10%" actually reads as instead of scaling per slider.
+  // The setting is labeled "5%"/"10%", so the step has to be 5/10 percent
+  // of EACH slider's own min–max range — a flat absolute step (e.g. "5")
+  // meant something wildly different per slider depending on that range
+  // (~8% on a 0–60 slider, way more than the whole range on a 0–1 one),
+  // which read as snapping being random/broken rather than a consistent
+  // percentage.
   document.querySelectorAll('input[type=range].ur-range').forEach(function(el){
     if(el.dataset.origStep === undefined) el.dataset.origStep = el.step || '1';
-    // "Off" must mean genuinely continuous — falling back to origStep here
-    // used to restore each slider's markup step (5 for opacity, 10 for
-    // shader speed, 0.5 for blur radius), so those sliders kept snapping
-    // even with Snapping set to Off.
-    el.step = pct > 0 ? pct : 'any';
+    if(pct > 0){
+      var min = parseFloat(el.min) || 0, max = parseFloat(el.max) || 100;
+      var step = (max - min) * pct / 100;
+      el.step = step > 0 ? step : el.dataset.origStep;
+    } else {
+      // "Off" must mean genuinely continuous — falling back to origStep
+      // here used to restore each slider's markup step (5 for opacity, 10
+      // for shader speed, 0.5 for blur radius), so those sliders kept
+      // snapping even with Snapping set to Off.
+      el.step = 'any';
+    }
   });
 }
 function setSliderThickness(thickness){
@@ -4366,14 +6234,6 @@ function toggleBgPreview(){
   btn.textContent = hidden ? '−' : '+';
   localStorage.setItem('kiki_bg_preview_hidden', hidden ? '0' : '1');
   if(hidden) previewBgPreset(localStorage.getItem('kiki_bg_preset') || 'aurora');
-}
-function toggleLoaderPreview(){
-  var wrap = document.getElementById('loader-preview-wrap-inner');
-  var btn = document.getElementById('loader-preview-toggle-btn');
-  var hidden = wrap.style.display === 'none';
-  wrap.style.display = hidden ? '' : 'none';
-  btn.textContent = hidden ? '−' : '+';
-  localStorage.setItem('kiki_loader_preview_hidden', hidden ? '0' : '1');
 }
 // ─── Kiki OSINT panel loader ───────────────────────────────────────────
 // Fetches /osint/ and transcludes it into #osint-frame instead of using an
@@ -4447,6 +6307,11 @@ function loadOsintPanel(){
     initM3Sliders();
     initElasticSliders();
     m3InitSpinners();
+    // The panel's own setLang() defaults to "en" until told otherwise —
+    // sync it to whatever language Settings already has saved, so a RU
+    // user doesn't see an English OSINT panel on first load now that its
+    // own switcher (which used to force this manually) is gone.
+    if(window.setLang) window.setLang(localStorage.getItem('kiki_lang') || 'en');
     document.dispatchEvent(new Event('kiki-osint-ready'));
     window.dispatchEvent(new Event('kiki-osint-ready'));
   }).catch(function(e){ console.error('Failed to load Kiki OSINT panel', e); });
@@ -4457,6 +6322,8 @@ loadOsintPanel();
   var saved = localStorage.getItem('kiki_app_theme');
   if(saved){
     try{ var t = JSON.parse(saved); applyAppTheme(t.light, t.dark, t.key); }catch(e){}
+  } else {
+    _syncM3Rgb(); // no saved theme means --a is still the plain CSS default — sync once anyway so it's never stale
   }
 })();
 (function initLoaderPrefs(){
@@ -4466,6 +6333,7 @@ loadOsintPanel();
   markActive('s-loader-container', window.__kikiLoaderContainer ? 'on' : 'off');
   window.__kikiWaveThick = localStorage.getItem('kiki_wave_thick') === '1';
   markActive('s-wavebar-thickness', window.__kikiWaveThick ? 'thick' : 'thin');
+  markActive('s-wc-crack-style', localStorage.getItem('kiki_wc_crack_style') || 'default');
   var sliderStyle = localStorage.getItem('kiki_slider_style') || 'classic';
   document.documentElement.setAttribute('data-slider-style', sliderStyle);
   markActive('s-slider-style', sliderStyle);
@@ -4488,10 +6356,6 @@ loadOsintPanel();
   if(localStorage.getItem('kiki_bg_preview_hidden') === '1'){
     var bp = document.getElementById('bg-preview-wrap-inner'); if(bp) bp.style.display = 'none';
     var bpBtn = document.getElementById('bg-preview-toggle-btn'); if(bpBtn) bpBtn.textContent = '+';
-  }
-  if(localStorage.getItem('kiki_loader_preview_hidden') === '1'){
-    var lp = document.getElementById('loader-preview-wrap-inner'); if(lp) lp.style.display = 'none';
-    var lpBtn = document.getElementById('loader-preview-toggle-btn'); if(lpBtn) lpBtn.textContent = '+';
   }
   if(localStorage.getItem('kiki_slider_preview_hidden') === '1'){
     var sp = document.getElementById('slider-style-preview-wrap-inner'); if(sp) sp.style.display = 'none';
@@ -4811,6 +6675,54 @@ function m3InitSpinners(){
 }
 m3InitSpinners();
 
+// ASCII bracket bar / curl-style meter share this renderer — both are text,
+// not path geometry, so instead of two separate SVG shapes (track/wave/dot)
+// they draw into one <text> element with colored <tspan> segments. Used by
+// both the real attachWaveBar() bars and the Settings preview below so the
+// two can't drift apart.
+var LOADER_TEXT_LEVELS = [' ','▏','▎','▍','▌','▋','▊','▉','█'];
+function renderLoaderBarText(textEl, style, p, color, dimColor, charW){
+  var svgns = 'http://www.w3.org/2000/svg';
+  function mk(str, fill){ var t = document.createElementNS(svgns,'tspan'); t.textContent = str; t.setAttribute('fill', fill); return t; }
+  var w = parseFloat(textEl.getAttribute('data-w')) || 0;
+  // The bar itself only gets the width left after '[' and '] 100%' (worst
+  // case 7 chars) — those aren't part of the budget below, so without this
+  // reserve the bar overflows past the svg's right edge by their width.
+  var total = Math.max(4, Math.round(w / charW) - 7);
+  textEl.textContent = '';
+  var charCount;
+  if(style === 'ascii'){
+    var exact = total * p, whole = Math.floor(exact), eighth = Math.round((exact - whole) * 8);
+    if(eighth === 8){ eighth = 0; whole++; }
+    whole = Math.min(whole, total);
+    var partial = (whole < total) ? LOADER_TEXT_LEVELS[eighth] : '';
+    var empty = '░'.repeat(Math.max(0, total - whole - (partial ? 1 : 0)));
+    var suffix = '] ' + Math.round(p*100) + '%';
+    textEl.appendChild(mk('[', dimColor));
+    textEl.appendChild(mk('█'.repeat(whole) + partial, color));
+    textEl.appendChild(mk(empty, 'rgba(255,255,255,.15)'));
+    textEl.appendChild(mk(suffix, dimColor));
+    charCount = 1 + total + suffix.length;
+  } else {
+    var filled = Math.min(total, Math.round(total * p));
+    var suffix2 = '] ' + Math.round(p*100) + '%';
+    textEl.appendChild(mk('[', dimColor));
+    textEl.appendChild(mk('#'.repeat(filled), color));
+    textEl.appendChild(mk('-'.repeat(Math.max(0, total - filled)), 'rgba(255,255,255,.15)'));
+    textEl.appendChild(mk(suffix2, dimColor));
+    charCount = 1 + total + suffix2.length;
+  }
+  // Unicode block glyphs (█/░) don't reliably share JetBrains Mono's ASCII
+  // advance width — some renderers pull them from a fallback font at a
+  // different width per glyph, so the bar's rendered length crept around
+  // as the filled/empty mix shifted with progress. textLength pins the
+  // WHOLE line to the pixel width our own char budget assumed, and the
+  // browser compresses/spaces glyphs to hit it — dead reckoning instead of
+  // trusting font metrics we don't control.
+  textEl.setAttribute('textLength', charCount * charW);
+  textEl.setAttribute('lengthAdjust', 'spacingAndGlyphs');
+}
+
 // ─── Settings > Loading Indicator preview: item "1" is a live circular
 // morph/ring at whatever style+color are currently selected, item "2" is a
 // real M3-spec wavy determinate linear bar (track + gap + stop dot,
@@ -4837,6 +6749,14 @@ m3InitSpinners();
   var stopDot = document.createElementNS(svgns,'circle');
   stopDot.setAttribute('r', 2.5); stopDot.setAttribute('cy', 10);
   barSvg.appendChild(stopDot);
+  var text = document.createElementNS(svgns,'text');
+  text.setAttribute('y', 10);
+  text.setAttribute('dominant-baseline', 'central');
+  text.setAttribute('font-family', "'JetBrains Mono', monospace");
+  text.setAttribute('font-size', 15);
+  text.setAttribute('data-w', 280);
+  text.style.display = 'none';
+  barSvg.appendChild(text);
 
   var W=280, MID=10, WAVELEN=18, GAP=6;
   function barAmplitude(p, amp){ return amp * Math.sin(Math.min(Math.max(p,0),1) * Math.PI); }
@@ -4855,10 +6775,23 @@ m3InitSpinners();
     wavePath.setAttribute('stroke-width', sw);
     stopDot.setAttribute('r', stopR);
 
-    if(style === 'classic') drawClassicRing(ctx, 40, elapsed, circleColor);
+    // No circular equivalent for ASCII/curl — the circle preview just shows
+    // the plain classic ring for those two, same as it does for 'classic'.
+    if(style === 'classic' || style === 'ascii' || style === 'curl') drawClassicRing(ctx, 40, elapsed, circleColor);
     else { animator.update(ts); drawIndicator(ctx, 40, getMorphedShape(animator.morph), animator.rotation, {color: circleColor}); }
 
     var progress = (Math.sin(elapsed * 0.6) + 1) / 2;
+
+    if(style === 'ascii' || style === 'curl'){
+      track.style.display = 'none'; wavePath.style.display = 'none'; stopDot.style.display = 'none';
+      text.style.display = '';
+      renderLoaderBarText(text, style, progress, barColor, 'rgba(255,255,255,.4)', 15 * 0.6);
+      requestAnimationFrame(loop);
+      return;
+    }
+    track.style.display = ''; wavePath.style.display = ''; stopDot.style.display = '';
+    text.style.display = 'none';
+
     var fillW = W * progress, phase = elapsed * 3;
     var d;
     if(style === 'classic'){
@@ -4899,7 +6832,7 @@ function attachWaveBar(svgId, opts){
   var svg = document.getElementById(svgId);
   if(!svg) return;
   var vb = (svg.getAttribute('viewBox') || '0 0 120 12').split(' ').map(Number);
-  var W = vb[2], MID = vb[3] / 2;
+  var W = vb[2], H = vb[3], MID = H / 2;
   var WAVELEN = opts.wavelen || 14, GAP = 5;
   var svgns = 'http://www.w3.org/2000/svg';
   var track = document.createElementNS(svgns, 'rect');
@@ -4913,6 +6846,18 @@ function attachWaveBar(svgId, opts){
   var stopDot = document.createElementNS(svgns, 'circle');
   stopDot.setAttribute('cy', MID);
   svg.appendChild(stopDot);
+  // ASCII/curl styles are text, not path geometry — one <text> node instead
+  // of the three shapes above, toggled by display per frame since the style
+  // can change live from Settings without a reload.
+  var text = document.createElementNS(svgns, 'text');
+  text.setAttribute('y', MID);
+  text.setAttribute('dominant-baseline', 'central');
+  text.setAttribute('font-family', "'JetBrains Mono', monospace");
+  var textFontSize = Math.max(8, H * 0.85);
+  text.setAttribute('font-size', textFontSize);
+  text.setAttribute('data-w', W);
+  text.style.display = 'none';
+  svg.appendChild(text);
   // Thin(2)/Thick(4) mirrors the real M3 4dp/8dp track spec at this
   // component's own scale — live via window.__kikiWaveThick so an in-flight
   // bar re-thickens without a page reload, not just newly-attached ones.
@@ -4926,22 +6871,39 @@ function attachWaveBar(svgId, opts){
     if(svg.offsetParent === null){ requestAnimationFrame(loop); return; } // hidden — skip work, keep polling for reopen
     if(t0 === null) t0 = ts;
     var elapsed = (ts - t0) / 1000;
+    var style = window.__kikiLoaderStyle || 'you';
+    var color = (typeof opts.color === 'function') ? opts.color() : (opts.color || _loaderAccent());
+    var progress = opts.progress ? opts.progress() : (Math.sin(elapsed * 0.9) + 1) / 2;
+
+    if(style === 'ascii' || style === 'curl'){
+      track.style.display = 'none'; wavePath.style.display = 'none'; stopDot.style.display = 'none';
+      text.style.display = '';
+      renderLoaderBarText(text, style, progress, color, 'rgba(255,255,255,.4)', textFontSize * 0.6);
+      requestAnimationFrame(loop);
+      return;
+    }
+    track.style.display = ''; wavePath.style.display = ''; stopDot.style.display = '';
+    text.style.display = 'none';
+
     var tv = thickVals();
     var stopR = tv.th / 2 + 0.5;
     track.setAttribute('y', MID - tv.th/2); track.setAttribute('height', tv.th);
     wavePath.setAttribute('stroke-width', tv.sw);
     stopDot.setAttribute('r', stopR);
-    var color = (typeof opts.color === 'function') ? opts.color() : (opts.color || _loaderAccent());
-    var progress = opts.progress ? opts.progress() : (Math.sin(elapsed * 0.9) + 1) / 2;
     var fillW = W * progress, phase = elapsed * 3.4;
-    var amp = barAmplitude(progress, tv.amp);
-    var d = 'M0 ' + MID;
-    var steps = Math.max(1, Math.ceil(fillW / (WAVELEN / 10)));
-    for(var i = 1; i <= steps; i++){
-      var x = Math.min(i * (WAVELEN / 10), fillW);
-      var y = MID + Math.sin(x / WAVELEN * Math.PI * 2 + phase) * amp;
-      d += ' L' + x.toFixed(2) + ' ' + y.toFixed(2);
-      if(x >= fillW) break;
+    var d;
+    if(style === 'classic'){
+      d = 'M0 ' + MID + ' L' + fillW.toFixed(2) + ' ' + MID;
+    } else {
+      var amp = barAmplitude(progress, tv.amp);
+      d = 'M0 ' + MID;
+      var steps = Math.max(1, Math.ceil(fillW / (WAVELEN / 10)));
+      for(var i = 1; i <= steps; i++){
+        var x = Math.min(i * (WAVELEN / 10), fillW);
+        var y = MID + Math.sin(x / WAVELEN * Math.PI * 2 + phase) * amp;
+        d += ' L' + x.toFixed(2) + ' ' + y.toFixed(2);
+        if(x >= fillW) break;
+      }
     }
     wavePath.setAttribute('d', d);
     wavePath.setAttribute('stroke', color);
@@ -5054,11 +7016,13 @@ var AI_KEY_PRIORITY=[['mistral','s-mistral','MISTRAL_API_KEY'],['gemini','s-gem'
 
 async function loadSettings(){
   try{var r=await fetch('/api/keys'),d=await r.json();
-    var m={'s-vk':'VK_TOKEN','s-gem':'GEMINI_API_KEY','s-ant':'ANTHROPIC_API_KEY','s-deepseek':'DEEPSEEK_API_KEY','s-mistral':'MISTRAL_API_KEY'};
+    var m={'s-vk':'VK_TOKEN','s-gem':'GEMINI_API_KEY','s-ant':'ANTHROPIC_API_KEY','s-deepseek':'DEEPSEEK_API_KEY','s-mistral':'MISTRAL_API_KEY','s-brave':'BRAVE_SEARCH_API_KEY'};
     Object.keys(m).forEach(function(k){var el=document.getElementById(k);if(el&&d[m[k]])el.placeholder=d[m[k]]})
   }catch(e){}
   loadToolPaths();
   loadWslStatus();
+  loadAsstPersonalization();
+  if(window.wcInitCrackPreviews) window.wcInitCrackPreviews();
 }
 
 // ─── WiFi Cracker tool paths (hashcat / rockyou.txt / tshark / wifi_cracker.py) ───
@@ -5140,7 +7104,7 @@ function copyWslCmd(){
   });
 }
 async function saveSettings(){
-  var data={},m={'s-vk':'VK_TOKEN','s-gem':'GEMINI_API_KEY','s-ant':'ANTHROPIC_API_KEY','s-deepseek':'DEEPSEEK_API_KEY','s-mistral':'MISTRAL_API_KEY'};
+  var data={},m={'s-vk':'VK_TOKEN','s-gem':'GEMINI_API_KEY','s-ant':'ANTHROPIC_API_KEY','s-deepseek':'DEEPSEEK_API_KEY','s-mistral':'MISTRAL_API_KEY','s-brave':'BRAVE_SEARCH_API_KEY'};
   Object.keys(m).forEach(function(k){var el=document.getElementById(k);if(el){var v=el.value.trim();if(v)data[m[k]]=v}});
   try{
     await fetch('/api/keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
@@ -5524,6 +7488,69 @@ var asstLiveTools = [];   // tool calls for the in-flight message — {name,args
 var asstBusy = false;
 var asstSessions = [];
 var asstActiveSession = localStorage.getItem('kiki_asst_session') || '';
+// Typing effect — only the newest message in a render gets animated
+// (asstTypedIndices remembers which ones already played), so switching
+// chats or re-rendering for an unrelated reason never replays it on
+// messages that already finished typing out.
+var asstTypedIndices = {};
+var asstTyping = { on: localStorage.getItem('kiki_asst_typing') !== '0', speed: parseInt(localStorage.getItem('kiki_asst_typing_speed')) || 35, cursor: localStorage.getItem('kiki_asst_cursor') || '▌' };
+function setAsstTyping(on){
+  asstTyping.on = on;
+  localStorage.setItem('kiki_asst_typing', on ? '1' : '0');
+  markActive('s-asst-typing', on ? 'on' : 'off');
+}
+function setAsstTypingSpeed(v){
+  asstTyping.speed = v;
+  localStorage.setItem('kiki_asst_typing_speed', v);
+  markActive('s-asst-speed', String(v));
+}
+function setAsstCursor(c){
+  asstTyping.cursor = c;
+  localStorage.setItem('kiki_asst_cursor', c);
+  markActive('s-asst-cursor', c);
+}
+// Personalization fields — not secrets, so (unlike the API key inputs) they
+// save on every change straight to keys.json via the same /api/keys store,
+// and the field shows the real current value rather than a placeholder.
+function setAsstUserName(v){
+  fetch('/api/keys', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ASSISTANT_USER_NAME: v})});
+}
+function setAsstFact(v){
+  fetch('/api/keys', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ASSISTANT_PERSISTENT_FACT: v})});
+}
+function loadAsstPersonalization(){
+  fetch('/api/keys').then(function(r){ return r.json(); }).then(function(d){
+    var nameEl = document.getElementById('s-asst-name');
+    var factEl = document.getElementById('s-asst-fact');
+    if(nameEl) nameEl.value = d.ASSISTANT_USER_NAME || '';
+    if(factEl) factEl.value = d.ASSISTANT_PERSISTENT_FACT || '';
+  }).catch(function(){});
+}
+var _asstSettingsHome = null;
+function openAsstSettingsModal(){
+  var body = document.getElementById('settings-section-assistant');
+  if(body && !_asstSettingsHome){
+    _asstSettingsHome = {parent: body.parentNode, next: body.nextSibling};
+    document.getElementById('asst-set-modal-body').appendChild(body);
+  }
+  document.getElementById('asst-set-modal').classList.add('show');
+  loadAsstPersonalization();
+}
+function closeAsstSettingsModal(){
+  document.getElementById('asst-set-modal').classList.remove('show');
+  if(_asstSettingsHome){
+    _asstSettingsHome.parent.insertBefore(document.getElementById('settings-section-assistant'), _asstSettingsHome.next);
+    _asstSettingsHome = null;
+  }
+}
+document.addEventListener('click', function(ev){
+  if(ev.target.id === 'asst-set-modal') closeAsstSettingsModal();
+});
+(function initAsstTyping(){
+  markActive('s-asst-typing', asstTyping.on ? 'on' : 'off');
+  markActive('s-asst-speed', String(asstTyping.speed));
+  markActive('s-asst-cursor', asstTyping.cursor);
+})();
 var ASST_TRASH_SMALL_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>';
 var ASST_CAT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v12l8 4 8-4V6z"/><path d="M9 10.5c0 .5.5 1 1 1s1-.5 1-1M13 10.5c0 .5.5 1 1 1s1-.5 1-1M9 15c1 1 5 1 6 0"/></svg>';
 var ASST_USER_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
@@ -5585,6 +7612,15 @@ var ASST_TOOL_META = {
     summarize: function(r){
       if(r.error) return r.error;
       return (r.path || '') + ' — ' + (r.format || 'file') + ', ' + (r.size!=null ? r.size+' bytes' : '');
+    }
+  },
+  web_search: {
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>',
+    label: 'Searching the web', tab: null,
+    summarize: function(r){
+      if(r.error) return r.error;
+      var n = (r.results || []).length;
+      return n + ' result' + (n===1?'':'s') + (r.query ? ' for "'+r.query+'"' : '');
     }
   }
 };
@@ -5699,6 +7735,12 @@ function asstLoadActiveHistory(){
   return fetch('/api/assistant/history?session_id='+encodeURIComponent(asstActiveSession)).then(function(r){return r.json()}).then(function(d){
     asstMessages = d.messages || [];
     asstOpenTools = {};
+    // Loaded history, not a live reply — the typing effect is for watching
+    // a fresh answer arrive, not for replaying old chats every time you
+    // open them. Mark everything already-typed so the render below shows
+    // it all statically.
+    asstTypedIndices = {};
+    asstMessages.forEach(function(m, i){ asstTypedIndices[i] = true; });
     asstRenderMessages();
   });
 }
@@ -5710,6 +7752,7 @@ function asstNewChat(){
     localStorage.setItem('kiki_asst_session', d.id);
     asstMessages = [];
     asstOpenTools = {};
+    asstTypedIndices = {};
     asstRenderMessages();
     return asstLoadSessionsList();
   });
@@ -5787,6 +7830,82 @@ function asstRenderToolCard(msgIdx, toolIdx, t, status){
     + '</div></div>'
     + '</div>';
 }
+// Ported 1:1 from reactbits.dev's real TextType source (pulled from the
+// react-bits repo, not rebuilt from scratch) — same char-by-char state
+// machine for typing/pausing/deleting/looping over an array of strings.
+// GSAP's cursor blink became a plain CSS animation since nothing else in
+// the app pulls in GSAP; idleHideDelay is the one addition beyond the
+// original — reactbits' cursor blinks forever, which reads as "still
+// typing" long after a finished, non-looping message really is done.
+function attachTextType(el, opts){
+  opts = Object.assign({
+    text: [''], typingSpeed: 50, initialDelay: 0, pauseDuration: 2000,
+    deletingSpeed: 30, loop: true, showCursor: true, hideCursorWhileTyping: false,
+    cursorCharacter: '|', idleHideDelay: 3000, onSentenceComplete: null
+  }, opts);
+  var textArray = Array.isArray(opts.text) ? opts.text : [opts.text];
+  el.innerHTML = '<span class="text-type__content"></span>' +
+    (opts.showCursor ? '<span class="text-type__cursor">'+opts.cursorCharacter+'</span>' : '');
+  var contentEl = el.querySelector('.text-type__content');
+  var cursorEl = el.querySelector('.text-type__cursor');
+  var charIndex = 0, textIndex = 0, deleting = false, displayed = '', timer = null, idleTimer = null;
+
+  function markActivity(){
+    if(!cursorEl || !opts.idleHideDelay) return;
+    cursorEl.classList.remove('text-type__cursor--idle');
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(function(){ cursorEl.classList.add('text-type__cursor--idle'); }, opts.idleHideDelay);
+  }
+  function updateCursor(){
+    if(!cursorEl) return;
+    var hide = opts.hideCursorWhileTyping && (charIndex < textArray[textIndex].length || deleting);
+    cursorEl.classList.toggle('text-type__cursor--hidden', hide);
+    markActivity();
+  }
+  function tick(){
+    var current = textArray[textIndex];
+    if(deleting){
+      if(displayed === ''){
+        deleting = false;
+        if(textIndex === textArray.length - 1 && !opts.loop) return;
+        if(opts.onSentenceComplete) opts.onSentenceComplete(current, textIndex);
+        textIndex = (textIndex + 1) % textArray.length;
+        charIndex = 0;
+        timer = setTimeout(tick, opts.pauseDuration);
+      } else {
+        timer = setTimeout(function(){
+          displayed = displayed.slice(0, -1);
+          contentEl.textContent = displayed;
+          updateCursor();
+          tick();
+        }, opts.deletingSpeed);
+      }
+    } else {
+      if(charIndex < current.length){
+        timer = setTimeout(function(){
+          displayed += current[charIndex];
+          charIndex++;
+          contentEl.textContent = displayed;
+          updateCursor();
+          tick();
+        }, opts.typingSpeed);
+      } else if(textArray.length >= 1){
+        if(!opts.loop && textIndex === textArray.length - 1){
+          // Upstream only ever fires onSentenceComplete from the
+          // post-delete branch above, so a non-looping single sentence
+          // never fires it — fine for decoration, not fine when a caller
+          // needs to know "typing is done" to reveal the final markdown.
+          if(opts.onSentenceComplete) opts.onSentenceComplete(current, textIndex);
+          return;
+        }
+        timer = setTimeout(function(){ deleting = true; tick(); }, opts.pauseDuration);
+      }
+    }
+  }
+  setTimeout(tick, opts.initialDelay);
+  updateCursor();
+  return { stop: function(){ clearTimeout(timer); clearTimeout(idleTimer); } };
+}
 function asstRenderMessages(){
   var box = document.getElementById('asst-messages');
   if(!asstMessages.length && !asstBusy){
@@ -5794,10 +7913,19 @@ function asstRenderMessages(){
     return;
   }
   var html = '';
+  // Only the newest message in the list ever gets the typing effect —
+  // asstTypedIndices remembers which indices already played it, so a
+  // re-render triggered by something unrelated (switching a tool card
+  // open, a tool result streaming in) never replays it on older messages.
+  var lastIdx = asstMessages.length - 1;
+  var typeTarget = null;
   asstMessages.forEach(function(m, i){
+    var shouldType = asstTyping.on && i === lastIdx && !asstTypedIndices[i] && !m.error;
     if(m.role === 'user'){
+      var finalInner = asstEscape(m.content);
       html += '<div class="asst-msg-row user">'
-        + '<div class="asst-msg user"><div class="asst-msg-inner">'+asstEscape(m.content)+'</div></div></div>';
+        + '<div class="asst-msg user"><div class="asst-msg-inner">'+(shouldType ? '<span id="asst-tt-'+i+'"></span>' : finalInner)+'</div></div></div>';
+      if(shouldType) typeTarget = {index:i, text:m.content, final:finalInner};
     } else if(m.error){
       html += '<div class="asst-msg-row assistant asst-err-row">'
         + '<div class="asst-err-bubble">'+asstEscape(m.error)+'</div></div>';
@@ -5806,8 +7934,10 @@ function asstRenderMessages(){
       if(m.tools && m.tools.length){
         tools = '<div class="asst-tools">' + m.tools.map(function(t, ti){ return asstRenderToolCard(i, ti, t, 'done'); }).join('') + '</div>';
       }
+      var finalHtml = asstMarkdown(m.content);
       html += '<div class="asst-msg-row assistant">'
-        + '<div style="max-width:100%">'+tools+'<div class="asst-msg assistant"><div class="asst-msg-inner">'+asstMarkdown(m.content)+'</div></div></div></div>';
+        + '<div style="max-width:100%">'+tools+'<div class="asst-msg assistant"><div class="asst-msg-inner">'+(shouldType ? '<span id="asst-tt-'+i+'"></span>' : finalHtml)+'</div></div></div></div>';
+      if(shouldType) typeTarget = {index:i, text:m.content, final:finalHtml};
     }
   });
   if(asstBusy){
@@ -5827,6 +7957,20 @@ function asstRenderMessages(){
   box.innerHTML = html;
   box.scrollTop = box.scrollHeight;
   if(asstBusy) m3InitSpinners();
+  if(typeTarget){
+    var ttEl = document.getElementById('asst-tt-' + typeTarget.index);
+    if(ttEl){
+      attachTextType(ttEl, {
+        text: [typeTarget.text], loop: false, showCursor: true,
+        cursorCharacter: asstTyping.cursor, typingSpeed: asstTyping.speed, initialDelay: 80,
+        onSentenceComplete: function(){
+          asstTypedIndices[typeTarget.index] = true;
+          ttEl.innerHTML = typeTarget.final;
+          box.scrollTop = box.scrollHeight;
+        }
+      });
+    }
+  }
 }
 function asstSend(){
   if(asstBusy) return;
@@ -6368,7 +8512,7 @@ function setSettingsCategory(cat, instant){
   // (hoisting only hoists the declaration, not the assignment), which is
   // exactly the "call-site ordering hazard" initSettingsSections' own
   // comment warns about — a module-level array reintroduced that bug.
-  var cats = ['interface','background','indicators','transparency','sliders','ai','tools'];
+  var cats = ['interface','background','indicators','transparency','sliders','ai','wifi','assistant','themes','tools'];
   document.querySelectorAll('.settings-cat-btn').forEach(function(b){
     b.classList.toggle('active', b.dataset.cat === cat);
   });
@@ -6539,7 +8683,18 @@ function urPreset(name){
   });
   var customEl = document.getElementById('ur-sliders');
   customEl.style.display = (name === 'custom') ? 'block' : 'none';
-  if(name === 'custom') return;
+  if(name === 'custom'){
+    // Each bubble's pixel position was last computed by urInitSliders() at
+    // page load, while this panel was still display:none (offsetWidth read
+    // 0 then) — it never moves again until that specific slider is dragged,
+    // so opening Custom showed every bubble bunched at the left regardless
+    // of its real value. Recompute now that the panel actually has layout.
+    ['ur-brightness','ur-exposure','ur-contrast','ur-shadows','ur-color','ur-sharpen'].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) urUpdateTrack(el);
+    });
+    return;
+  }
   var presets = {
     marker:    {brightness:100, exposure:100, contrast:-56, shadows:-50, color:100, sharpen:0},
     blur:      {brightness:0,   exposure:0,   contrast:0,   shadows:0,   color:0,   sharpen:80},
@@ -6559,7 +8714,15 @@ function urPresetDepix(name){
   });
   var customEl = document.getElementById('ur-depix-sliders');
   customEl.style.display = (name === 'custom') ? 'block' : 'none';
-  if(name === 'custom') return;
+  if(name === 'custom'){
+    // Same fix as urPreset() above — recompute bubble positions now that
+    // this panel has real layout instead of the stale page-load ones.
+    ['ur-blur-radius','ur-iterations','ur-dp-contrast','ur-dp-sharpen'].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) urUpdateTrack(el);
+    });
+    return;
+  }
   var presets = {
     light:  {'blur-radius':2,  iterations:8,  'dp-contrast':20, 'dp-sharpen':30},
     medium: {'blur-radius':4,  iterations:15, 'dp-contrast':30, 'dp-sharpen':50},

@@ -335,6 +335,13 @@ def get_keys():
         "DEEPSEEK_API_KEY":  mask(k.get("DEEPSEEK_API_KEY","")),
         "MISTRAL_API_KEY":   mask(k.get("MISTRAL_API_KEY","")),
         "HIBP_API_KEY":      mask(k.get("HIBP_API_KEY","")),
+        "BRAVE_SEARCH_API_KEY": mask(k.get("BRAVE_SEARCH_API_KEY","")),
+        # Not secrets — small assistant personalization fields piggybacking on
+        # the same keys.json persistence. Returned as-is (not masked) so the
+        # Settings UI can show the real current value in the field, not just
+        # a placeholder the user has to blindly overwrite to change.
+        "ASSISTANT_USER_NAME":       k.get("ASSISTANT_USER_NAME",""),
+        "ASSISTANT_PERSISTENT_FACT": k.get("ASSISTANT_PERSISTENT_FACT",""),
         "configured":        bool(k.get("VK_TOKEN") or k.get("GEMINI_API_KEY") or k.get("ANTHROPIC_API_KEY") or k.get("DEEPSEEK_API_KEY") or k.get("MISTRAL_API_KEY"))
     })
 
@@ -342,8 +349,13 @@ def get_keys():
 def save_keys_route():
     data = request.json or {}
     k = keys_store.load()
-    for field in ["VK_TOKEN","GEMINI_API_KEY","ANTHROPIC_API_KEY","DEEPSEEK_API_KEY","MISTRAL_API_KEY","HIBP_API_KEY"]:
+    for field in ["VK_TOKEN","GEMINI_API_KEY","ANTHROPIC_API_KEY","DEEPSEEK_API_KEY","MISTRAL_API_KEY","HIBP_API_KEY","BRAVE_SEARCH_API_KEY"]:
         if field in data and data[field] and "•" not in data[field]:
+            k[field] = data[field]
+    # Plain text, not secrets — allowed to be saved empty (clearing them is a
+    # valid choice), unlike the masked API key fields above.
+    for field in ["ASSISTANT_USER_NAME", "ASSISTANT_PERSISTENT_FACT"]:
+        if field in data:
             k[field] = data[field]
     keys_store.save(k)
     return jsonify({"ok":True})
@@ -1630,7 +1642,24 @@ def hc_crack():
     global _proc, _last_outcome
     data=request.json or {}
     hf=data.get("hash_file","").strip()
-    lite=bool(data.get("lite"))
+    # hashcat's own -w (workload profile) minimum is 1 (Low) — there's no
+    # lower setting hashcat itself offers. "Eco" goes past that by also
+    # dropping the whole hashcat PROCESS to Windows' Idle priority class
+    # (below every other request for CPU/GPU scheduling time), on top of
+    # -w 1. Used to be a bool "lite" flag that only ever sent -w 1; kept
+    # accepting that old boolean too so a stale cached frontend build
+    # doesn't silently stop passing a workload at all.
+    workload=data.get("workload")
+    if workload is None:
+        workload = 1 if data.get("lite") else 2
+    eco = (workload == "eco")
+    if eco:
+        workload = 1
+    else:
+        try:
+            workload = max(1, min(4, int(workload)))
+        except (TypeError, ValueError):
+            workload = 2
     if not hf or not os.path.exists(hf): return jsonify({"ok":False,"error":"hash file not found"})
     hashcat_exe, _ = resolve_hashcat()
     if not hashcat_exe:
@@ -1645,7 +1674,7 @@ def hc_crack():
     if not all_wl: return jsonify({"ok":False,"error":"no wordlists"})
     cracked=hf.replace(".hc22000","_cracked.txt")
     log("sys","hashcat start"); log("dim",f"wordlists: {len(all_wl)}")
-    if lite: log("dim","lite mode: workload profile 1 (Low)")
+    log("dim",f"workload profile: {workload} ({['','Low','Default','High','Nightmare'][workload]})" + (" + Idle process priority (Eco)" if eco else ""))
     def run():
         global _proc, _password, _running, _stop_requested, _last_outcome
         _running = True
@@ -1677,10 +1706,17 @@ def hc_crack():
                     if _stop_requested: log("warn","stopped by user")
                     break
                 log("sys",f"trying: {Path(wl).name}")
-                cmd=[hashcat_exe,"-m","22000",hf,wl,"--status","--status-timer=4","--force","-o",cracked]
-                if lite: cmd += ["-w","1"]  # workload profile 1 (Low) — hashcat's own throttle, keeps the rest of the machine usable instead of pegging every compute unit at 100%
+                cmd=[hashcat_exe,"-m","22000",hf,wl,"--status","--status-timer=1","--force","-o",cracked,"-w",str(workload)]
+                popen_kwargs = dict(stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1,cwd=hc_dir)
+                if eco and os.name=="nt":
+                    # -w 1 is hashcat's own floor — Idle priority class goes
+                    # below that by telling Windows' scheduler this process
+                    # only gets CPU/GPU time slices nothing else wants right
+                    # now, instead of hashcat's normal (and even -w 1's)
+                    # standard-priority scheduling.
+                    popen_kwargs["creationflags"] = subprocess.IDLE_PRIORITY_CLASS
                 try:
-                    _proc=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1,cwd=hc_dir)
+                    _proc=subprocess.Popen(cmd,**popen_kwargs)
                     for line in _proc.stdout:
                         if _stop_requested:
                             _proc.terminate()
@@ -2750,6 +2786,14 @@ ASSISTANT_TOOLS = [
             "path": {"type": "string", "description": "Full SD card path to the file, e.g. '/ext/subghz/my_capture.sub'. Use flipper_browse first to find the exact path if you don't already know it."}
         }, "required": ["path"]},
     }},
+    {"type": "function", "function": {
+        "name": "web_search",
+        "description": "Search the live web (Brave Search) for anything that might have changed since your training data — current events, a tool's latest version, a CVE, a person/company, price info, or anything you're not confident is still accurate. Use this instead of guessing whenever freshness matters.",
+        "parameters": {"type": "object", "properties": {
+            "query": {"type": "string", "description": "The search query."},
+            "count": {"type": "integer", "description": "How many results to return. Defaults to 5, max 10."}
+        }, "required": ["query"]},
+    }},
 ]
 ASSISTANT_GATED_TOOLS = set()  # e.g. {"wifi_crack"} once that tool lands
 
@@ -2862,6 +2906,33 @@ def _osint_username_search_core_stream(username, maigret_limit=500, sources=None
             collected["maigret"] = {"found": deduped, "total": len(deduped)}
     yield ("result", collected)
 
+def _web_search_tool(query, count=5):
+    """Live web search via Brave Search API — the assistant's only source of
+    information newer than its training data. Free tier (2000 queries/month),
+    plain REST, reachable from Russia without a VPN unlike most LLM-provider
+    APIs, so it doesn't inherit the Gemini/OpenRouter region-block problem."""
+    query = (query or "").strip()
+    if not query:
+        return {"error": "empty query"}
+    api_key = keys_store.get("BRAVE_SEARCH_API_KEY")
+    if not api_key:
+        return {"error": "No Brave Search API key configured — add one in Settings"}
+    try:
+        r = requests.get(
+            "https://api.search.brave.com/res/v1/web/search",
+            headers={"Accept": "application/json", "X-Subscription-Token": api_key},
+            params={"q": query, "count": max(1, min(int(count or 5), 10))},
+            timeout=15,
+        )
+        r.raise_for_status()
+        results = r.json().get("web", {}).get("results", [])
+        return {"query": query, "results": [
+            {"title": item.get("title"), "url": item.get("url"), "snippet": item.get("description")}
+            for item in results
+        ]}
+    except Exception as e:
+        return {"error": str(e)}
+
 def _assistant_run_tool(name, args):
     """Executes one tool call and returns a JSON-serializable result. Kept
     separate from the provider call loop so gating logic doesn't have to
@@ -2894,6 +2965,8 @@ def _assistant_run_tool(name, args):
             return _flipper_browse_tool(args.get("path"))
         if name == "flipper_read_capture":
             return _flipper_read_capture_tool(args.get("path"))
+        if name == "web_search":
+            return _web_search_tool(args.get("query", ""), args.get("count") or 5)
         return {"error": "unknown tool: " + name}
     except Exception as e:
         return {"error": str(e)}
@@ -2939,9 +3012,13 @@ ASSISTANT_SYSTEM_PROMPT = (
     "Mistral/Gemini/Anthropic/DeepSeek, HIBP, GitHub) lives here, saved to "
     "keys.json locally, never sent anywhere but the respective API. Also nav "
     "style (Dock/Rail), app theme, and background.\n\n"
-    "You have FIVE real tools right now: geoint_analyze_photo (needs a local "
-    "file path), wifi_status, osint_search_username, flipper_browse, and "
-    "flipper_read_capture. flipper_browse lists files on a connected Flipper "
+    "You have SIX real tools right now: geoint_analyze_photo (needs a local "
+    "file path), wifi_status, osint_search_username, flipper_browse, "
+    "flipper_read_capture, and web_search. Use web_search whenever the "
+    "answer depends on something that could have changed since your "
+    "training data — current events, a tool's latest version, a CVE, prices, "
+    "a person/company — rather than guessing or hedging with 'I might be "
+    "out of date'. flipper_browse lists files on a connected Flipper "
     "Zero's SD card (auto-detects the port, no need to ask the user for one) — "
     "use it to find a capture's exact path if the user doesn't give one. "
     "flipper_read_capture reads a .sub/.nfc/.ir/.rfid file and hands you its "
@@ -3070,6 +3147,19 @@ def assistant_chat():
         lang_instruction = "Always reply in the same language the user's message is written in — match their language exactly, message by message."
         history = sess["messages"]
         api_messages = [{"role": "system", "content": ASSISTANT_SYSTEM_PROMPT + " " + lang_instruction}]
+        # User-set personalization — unlike device_info below, this applies to
+        # EVERY message in the session, not just the first, since the user's
+        # name and standing fact don't stop being true partway through a chat.
+        k = keys_store.load()
+        user_name = (k.get("ASSISTANT_USER_NAME") or "").strip()
+        persistent_fact = (k.get("ASSISTANT_PERSISTENT_FACT") or "").strip()
+        if user_name or persistent_fact:
+            personalization = []
+            if user_name:
+                personalization.append(f"Address the user as \"{user_name}\".")
+            if persistent_fact:
+                personalization.append(f"Always keep this in mind: {persistent_fact}")
+            api_messages.append({"role": "system", "content": " ".join(personalization)})
         if not history:
             device_info = _assistant_device_info()
             if device_info:
